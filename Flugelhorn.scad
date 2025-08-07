@@ -591,26 +591,39 @@ module fourth_valve_tubing(bore = 0.413, thickness = 2) {
     }
     
     // Estimated total length: 150mm + 275mm = 425mm
-    translate([9.9, 0, 11.5]) rotate([0, 90, 0]) {
-        straight_tube(40, bore = bore);
+    translate([-.1, -25.9, 11.5]) rotate([90, 0, 0]) {
+        straight_tube(80, bore = bore);
     }
-    translate([49.9, -10, 11.5]) rotate([-90, 180, 0]) {
+
+    translate([9.9, -105.9, 11.5]) rotate([90, 0, 0]) {
         curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
                     radius_2 = mmbore / 2 + thickness, bend_radius = 10,
                     thickness = thickness, start_degrees = 0,
                     end_degrees = 90, reversed = true); 
     }
-    
-    translate([59.9, -10, 11.5]) rotate([90, 0, 0]) {
-        straight_tube(16, bore = bore);
+    translate([121.9, -115.9, 11.5]) rotate([-90, 0, 90]) {
+            tuning_slide(leading_length = 0, slide_length = 102, joint_length = 5,
+                         trailing_length = 5, bore=bore, disassembled = false,
+                         outer_only = true, shift = 0);
     }
+
+//    translate([59.9, -10, 11.5]) rotate([90, 0, 0]) {
+//        straight_tube(16, bore = bore);
+//    }
 
 
     
     // Tuning slide here
+    // Tuning slide goes here.
+    if (global_in_place) {
+      translate([127.1, -116, 11.5]) rotate([-90, 0, 90]) fourth_valve_slide();
+    }
     
-    
-    
+    translate([121.9, 0, 11.5]) rotate([-90, 0, 90]) {
+            tuning_slide(leading_length = 0, slide_length = 102, joint_length = 5,
+                         trailing_length = 5, bore=bore, disassembled = false,
+                         outer_only = true, shift = 0);
+    }
     
     translate([0, -25.9, 1.5]) rotate([0, 0, -90]) {
         curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
@@ -624,7 +637,34 @@ module fourth_valve_tubing(bore = 0.413, thickness = 2) {
 }
 
 module fourth_valve_slide(bore = 0.413, thickness = 2) {
+  tuning_slide(leading_length = 5, slide_length = 102, joint_length = 5, trailing_length = 5,
+               thickness = thickness, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
+               disassembled = false, inner_only = true, outer_only = false, shift = 0);
 
+  mmbore = inches_to_mm(bore);
+
+  translate([10, 0, 0]) rotate([0, 90, 0]) {
+      curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
+                  radius_2 = mmbore / 2 + thickness, bend_radius = 10,
+                  thickness = thickness, start_degrees = 180,
+                  end_degrees = 270, reversed = true);
+  }
+  
+  translate([10, 0, -10]) rotate([0, 90, 0]) {
+    straight_tube(96, bore = bore);
+  }
+
+  translate([106, 0, 0]) rotate([0, 90, 0]) {
+      curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
+                  radius_2 = mmbore / 2 + thickness, bend_radius = 10,
+                  thickness = thickness, start_degrees = 90,
+                  end_degrees = 180, reversed = true);
+  }
+
+  translate([116, 0, 0])
+      tuning_slide(leading_length = 5, slide_length = 102, joint_length = 5, trailing_length = 5,
+                   thickness = 2, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
+                   disassembled = false, inner_only = true, outer_only = false, shift = 0);
 }
 
 module valve_block(bore = 0.413, fourth_valve = true) {
@@ -806,9 +846,18 @@ module bell_small_curve(bore=0.413, thickness = 2.0) {
     // bell end, so the diameter of the bend is halfway between, or 116mm.
     // The radius is therefore about 58mm.
 
-    curved_tube(slices = 100, radius_1 = 8.5 + thickness,
-                radius_2 = 7 + thickness, bend_radius = 58,
-                thickness = thickness);
+    difference() {
+      union() {
+        curved_tube(slices = 100, radius_1 = 8.5 + thickness,
+                    radius_2 = 7 + thickness, bend_radius = 58,
+                    thickness = thickness);
+        translate([-62, -1, 23.5]) rotate([180, 105, 7.5]) cylinder(3.5, 2.75, 2.75, $fn = 256);
+      }
+      translate([-62, -1, 23.5]) rotate([180, 105, 7.5]) cylinder(20, 1.5, 1.5, $fn = 256);
+    }
+    // translate([-62, -1, 23.5]) rotate([180, 105, 7.5]) cylinder(20, 1.5, 1.5, $fn = 256);
+
+    translate([-69, -2, 15]) rotate([0, -15, 187.5]) translate([-3, 0, 0]) spit_valve(enable_mount = true, enable_flap = true);
 }
     
 module curved_tube(bore=0.413, thickness = 2.0, radius_1 = 10,
@@ -847,14 +896,19 @@ module bell(bore=0.413, thickness = 2.0) {
     bell_main_segment(bore = bore, height = bell_length, thickness = thickness);
     translate([76, 0, bell_length]) bell_big_curve(bore = bore, thickness = thickness);
     
+    mmbore = inches_to_mm(bore);
+    
     id_2 = 19;
     id_2_inches = mm_to_inches(id_2);
     id_1 = 17;
     id_1_inches = mm_to_inches(id_1);
     
+
     translate([152, 0, 121]) sloped_tube(216, thickness = 2, bore_1 = id_1_inches,
                                          bore_2 = id_2_inches);
+                                         
     translate([96.00, -15, 121]) rotate([0, 180, 15]) bell_small_curve(bore = bore, thickness = thickness);
+
     // Top is at 430 or so.  Bottom should be about 54.  This block lets us measure.
     // translate([100, -5, 44]) cube([10, 10, 10]);
     
@@ -910,20 +964,36 @@ module bell(bore=0.413, thickness = 2.0) {
 // Third valve slide: Same as first, but 28mm between slides, 104mm from top of top hole
 //                    to slide gap on long side, 69mm interior slide length.
 
-module spit_valve() {
+module spit_valve(enable_flap = true, enable_mount = true) {
   // Designed for a 1/4" x 7/8" stretch spring (Amazon ASIN B097R78LN2).
   // Also used Amazon ASIN B0DCGJ65QC for valve springs, but they're too strong.
   // Look for something else.
+
+  if (enable_flap) {
+    translate([1, 0, 10]) rotate([0, 90, 0]) {
+      difference() {
+        cylinder(4.5, 5, 5, $fn = 256);
+        cylinder(3.5, 4.5, 4.5, $fn = 256);
+      }
+//      translate([-30, -5, 4]) cube([30, 10, 4]);
+    }
+  }
+  
+  if (enable_mount) {
+    
+  }
+
+//   translate([0, -5, 0]) cube(10);
   
 }
 
 // piston_valve_cap();
 
 // Build instrument in place
-if (false) {
+if (true) {
     bell();
-    translate([78.6, -19.6, 247]) rotate([0, -90, 15]) valve_block();
-    translate([39.6, -29.6, 449]) rotate([0, 180, -165]) small_morse_receiver(disassembled = false);
+//    translate([78.6, -19.6, 247]) rotate([0, -90, 15]) valve_block();
+//    translate([39.6, -29.6, 449]) rotate([0, 180, -165]) small_morse_receiver(disassembled = false);
 } else {
     valve_block();
     // valve_parts();
