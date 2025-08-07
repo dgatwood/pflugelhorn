@@ -12,13 +12,30 @@ use <scad-utils/shapes.scad>
 // https://github.com/openscad/list-comprehension-demos
 use <list-comprehension-demos/skin.scad>
 
+// Assembly notes: Valve tolerances must be tight or the instrument will be
+// unplayable.  To deal with this, you will need to lap the valves as follows:
+//
+// 1.  Apply a thick coating of Plastruct Plastic weld to the valve.
+// 2.  About half a minute after you finish, use acetone with a paper towel
+//     to clean off the solvent/glue that you just added.
+// 3.  Wash the valve with dish detergent.
+// 4.  Perform three sanding passes with 400-grit emery cloth — two passes
+//     vertically down the length of the valve and one pass in small circles.
+//     In each pass, sand until not obviously sticky.  Wash with dish
+//     detergent between passes.
+// 5.  Allow the valves to dry.  If they are still sticky after an hour,
+//     do another sanding and washing pass.  Repeat until not sticky.
+//
+// Note that these instructions assume PLA.  Other materials may vary.
 
 // To do list:
 //
-// 1.  Check valves 1, 3, and 4, and if necessary, reduce width by 0.02mm.
-// 2.  Split main part of the bell for people whose printers can't print
+// 1.  Fix leaky valves.
+// 2.  Fix lead pipe so that the gap closes by making the outer tube slightly smaller inside.
+// 3.  Check valve slides for 1, 3, and 4, and if necessary, reduce width by 0.02mm.
+// 4.  Split main part of the bell for people whose printers can't print
 //     something that tall (337mm).
-// 3.  Reenable valve_parts() when I'm done tweaking things.
+// 5.  Reenable valve_parts() when I'm done tweaking things.
 
 /*
  * Note that unless otherwise noted, all dimensions are in mm except for
@@ -26,8 +43,16 @@ use <list-comprehension-demos/skin.scad>
  * sizes are traditionally measured.
  */
  
-global_build_group = 2;
-high_quality = false;
+// 0 == Whole instrument (slow, useless for printing).
+// 1 == Valve section.
+// 2 == Valves and caps.
+// 3 == Bell parts.
+// 4 == Spit valve lever.
+// 5 == Tuning slides.
+// 6 == Mouthpiece receiver.
+// 7 == Valve measurement casing (for aid in knowning whether to sanding curved part of valves or just flat side)
+global_build_group = 7;
+high_quality = true;
 
 casing_height = 101.5;  // Do not modify.
 global_in_place = (global_build_group == 0);  // Do not modify.
@@ -39,21 +64,29 @@ function MIN(a, b) = ((a < b) ? a : b);
  
 /**
  * Creates a receiver and lead pipe with the specified taper and length.
- * @param outer_diameter_inches    The outer diameter of the mouthpiece at the
- *                                 large end of its taper.
- * @param taper_in_inches_per_inch The amount that the mouthpiece diameter
- *                                 decreases per inch.
- * @param taper_length_in_inches   The total length of the mouthpiece taper.
- * @param lead_pipe_length_in_mm   The length of the entire lead pipe, including
- *                                 the receiver.
- * @param bore                     The expected tubing bore at the far end of
- *                                 the lead pipe.
- * @param thickness_in_mm          The minimum thickness for the tubing.
- * @param nubs                     True to include nubs on the outside for easier
- *                                 tuning (if the lead pipe is used for tuning).
+ *
+ * @param outer_diameter_inches     The outer diameter of the mouthpiece at the
+ *                                  large end of its taper.
+ * @param taper_in_inches_per_inch  The amount that the mouthpiece diameter
+ *                                  decreases per inch.
+ * @param taper_length_in_inches    The total length of the mouthpiece taper.
+ * @param lead_pipe_length_in_mm    The length of the entire lead pipe, including
+ *                                  the receiver.
+ * @param bore                      The expected tubing bore at the far end of
+ *                                  the lead pipe.
+ * @param thickness_in_mm           The minimum thickness for the tubing.
+ * @param slide_gap_expansion       A gap between the lead pipe inner part and outer
+ *                                  part to reduce the need for sanding.
+ * @param outer_thickness_expansion Increase to the thickness of the outer pipe so that
+ *                                  its outer diameter is constant.  This is to avoid
+ *                                  having to reprint the valve block when you adjust
+ *                                  slide_gap_expansion.
+ * @param nubs                      True to include nubs on the outside for easier
+ *                                  tuning (if the lead pipe is used for tuning).
  */
 module receiver(outer_diameter_inches, taper_in_inches_per_inch, taper_length_in_inches,
-                lead_pipe_length_in_mm = 114, slide_gap_expansion = 0.2,
+                lead_pipe_length_in_mm = 114, slide_gap_expansion = 0.1,
+                outer_thickness_expansion = 0.1,
                 bore = 0.413, thickness_in_mm = 2.4, nubs = true, tuning = true,
                 disassembled = false) {
   mouthpiece_outer_diameter = inches_to_mm(outer_diameter_inches);
@@ -97,7 +130,8 @@ module receiver(outer_diameter_inches, taper_in_inches_per_inch, taper_length_in
 
   // The lead pipe has to slide into something.
   outer_pipe_inner_diameter = (outer_tube_radius + slide_gap_expansion) * 2;
-  outer_pipe_outer_diameter = outer_pipe_inner_diameter + (thickness_in_mm * 2);
+  outer_pipe_outer_diameter = outer_pipe_inner_diameter +
+                              ((outer_thickness_expansion + thickness_in_mm) * 2);
 
   final_external_radius = outer_tube_radius / 2;
   if (tuning) {
@@ -112,9 +146,10 @@ module receiver(outer_diameter_inches, taper_in_inches_per_inch, taper_length_in
                           mm_to_inches(outer_pipe_inner_diameter));
                           
                           
-            translate([-4, outer_tube_radius - 3, 0]) cube([3, 11, 8]);
-            translate([1, outer_tube_radius - 3, 0]) cube([3, 11, 8]);
+            translate([-3.5, outer_tube_radius - 3, 0]) cube([2, 11, 8]);
+            translate([1.5, outer_tube_radius - 3, 0]) cube([2, 11, 8]);
             
+            // Attachment plate
             translate([-7.7, 0, 0]) rotate([0, 0, 15]) {
               difference() {
                 translate([offset, -8, 26]) cube([32.35 + (2 * thickness_in_mm), 4, 33]);
@@ -129,7 +164,9 @@ module receiver(outer_diameter_inches, taper_in_inches_per_inch, taper_length_in
               rotate([0, 90, 0]) cylinder(10, 2, 2, $fn = 256);
           }
           // Slot for tightening the tube..
-          translate([-1, outer_tube_radius - 2, -1]) cube([2, 5, 15]);
+          translate([-1.5, outer_tube_radius - 2, -1]) cube([3, 5, 15]);
+
+          // Screw hole          
           translate([0, 0, -1]) cylinder(lead_pipe_length_in_mm + 2,
                                          outer_pipe_inner_diameter / 2,
                                          outer_pipe_inner_diameter / 2, $fn = 256);
@@ -149,11 +186,11 @@ module receiver_coupler(outer_diameter_inches, slide_gap_expansion = 0.2, thickn
   
   coupler_inner_diameter = outer_pipe_outer_diameter + 0.2;
 
-  straight_tube(20, bore = mm_to_inches(coupler_inner_diameter), thickness = 3.0);
+  straight_tube(30, bore = mm_to_inches(coupler_inner_diameter), thickness = 3.0);
 }
 
 /* A receiver for a standard large morse taper (cornet-style) flugelhorn mouthpiece. */
-module large_morse_receiver(lead_pipe_length_in_mm = 114, slide_gap_expansion = 0.2,
+module large_morse_receiver(lead_pipe_length_in_mm = 114, slide_gap_expansion = 0.05,
                 bore = 0.413, thickness_in_mm = 2.4, nubs = true, tuning = true,
                 disassembled = false) {
   receiver(0.4350, 0.05, 1.1, lead_pipe_length_in_mm = lead_pipe_length_in_mm,
@@ -172,7 +209,7 @@ module small_morse_receiver_coupler(slide_gap_expansion = 0.2, bore = 0.413, thi
            thickness_in_mm = thickness_in_mm);
 }
 
-module small_morse_receiver(lead_pipe_length_in_mm = 114, slide_gap_expansion = 0.2,
+module small_morse_receiver(lead_pipe_length_in_mm = 114, slide_gap_expansion = 0.05,
                 bore = 0.413, thickness_in_mm = 2.4, nubs = true, tuning = true,
                 disassembled = false) {
 
@@ -189,10 +226,10 @@ module small_morse_receiver(lead_pipe_length_in_mm = 114, slide_gap_expansion = 
  * constructing the outside of the valve and clipping certain elements to
  * the area that falls within the body of the valve.
  *
- * @param valve_gap_expansion The amount to shrink the valve to compensate
+ * @param valve_gap_expansion The amount to shrink or expand the valve to compensate
  *                            for inaccuracy in the size of the model.
  */
-module piston_valve_raw(valve_gap_expansion = 0.1) {
+module piston_valve_raw(valve_gap_expansion = 0.01) {
   difference() {
     cylinder(70, 11 - valve_gap_expansion, 11 - valve_gap_expansion, $fn=256);
     // Flat edge
@@ -210,22 +247,27 @@ module piston_valve_raw(valve_gap_expansion = 0.1) {
  *                             that the valve moves freely
  *                             without leaking.
  */
-module piston_valve(bore=0.413, even=true, valve_gap_expansion = 0.1) {
+module piston_valve(bore=0.413, valve_gap_expansion = 0.01, number = 1) {
+  odd = ((number % 2) != 0);
   mmbore = inches_to_mm(bore);
   difference() {
     piston_valve_raw(valve_gap_expansion);
     translate([0, 0, 62.5]) cylinder(8, 1.65, 1.65, $fn = 256);  // 3.3mm bore hole to tap an m4 screw for the valve stem.
     
     // To/from valve slide - top (L-bores)
-    translate([10, 0, even ? 46 : 30]) rotate_extrude(angle=360) translate([8, 0, 0]) circle(mmbore / 2);
-    translate([0, -11, even ? 30 : 46]) rotate_extrude(angle=360) translate([8, 0, 0]) circle(mmbore / 2);
+    translate([10, 0, odd ? 46 : 30]) rotate_extrude(angle=360, $fn=256)
+        translate([8, 0, 0]) circle(mmbore / 2, $fn=256);
+    translate([0, -11, odd ? 30 : 46]) rotate_extrude(angle=360, $fn=256)
+        translate([8, 0, 0]) circle(mmbore / 2, $fn=256);
 
     // Slant bore (in to out)
-    rotate([0, 0, even ? 0 : 180]) {
-        translate([0, 0, even ? -16.5 : -28.5]) {
-            translate([-8, -8, even ? 38 : 50]) rotate([-90, 35, 45]) rotate_extrude(angle=90) translate([8, 0, 0]) circle(mmbore / 2);
-            rotate([0, 0, 180]) translate([-8, -8, even ? 38 : 50]) rotate([90, -35, 45]) rotate_extrude(angle=90) translate([8, 0, 0]) circle(mmbore / 2);
-            translate([-4, -4.5, even ? 31.5 : 43.5]) rotate([-32, 32, -3])
+    rotate([0, 0, odd ? 0 : 180]) {
+        translate([0, 0, odd ? -16.5 : -28.5]) {
+            translate([-8, -8, odd ? 38 : 50]) rotate([-90, 35, 45])
+                rotate_extrude(angle=90, $fn=256) translate([8, 0, 0]) circle(mmbore / 2, $fn=256);
+            rotate([0, 0, 180]) translate([-8, -8, odd ? 38 : 50]) rotate([90, -35, 45])
+                rotate_extrude(angle=90, $fn=256) translate([8, 0, 0]) circle(mmbore / 2, $fn=256);
+            translate([-4, -4.5, odd ? 31.5 : 43.5]) rotate([-32, 32, -3])
                 cylinder(18, mmbore/2, mmbore/2, $fn = 256);
         };
     }
@@ -235,11 +277,14 @@ module piston_valve(bore=0.413, even=true, valve_gap_expansion = 0.1) {
     
     // Vented valve
     rotate([25, 25, 0]) cylinder(20, 2, 2, $fn = 256);
+    
+    // Valve number stamp
+    translate([0, 0, 65]) linear_extrude(6) rotate([0, 0, 45]) translate([2, -3.5, 0]) text(text = str(number), size = 8);
   }
   // Wall between slant bore and L-bore
   intersection() {
   // even
-    if (even) {
+    if (odd) {
       translate([0, -15, 14]) rotate([20, -35, 45]) cube([30, 30, 2]);
     } else {
       translate([0, -25, 28]) rotate([27, 35, 45]) cube([30, 30, 2]);
@@ -248,7 +293,7 @@ module piston_valve(bore=0.413, even=true, valve_gap_expansion = 0.1) {
   }
 }
 
-module piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2) {
+module piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2, for_measurement = false) {
     even = (number % 2) == 0;
 
     rotate([0, 0, -45]) {
@@ -259,21 +304,23 @@ module piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2) {
                     difference() {
                         union() {
                             translate([0, 0, 0]) cylinder(casing_height, 13, 13, $fn=256);
-                            rotate([0, 0, 45]) {
-                                if (global_in_place || true) {
-                                  if (number == 1) {
-                                    first_valve_tubing();
-                                  } else if (number == 2) {
-                                    second_valve_tubing();
-                                  } else if (number == 3) {
-                                    third_valve_tubing();
-                                  } else if (number == 4) {
-                                    fourth_valve_tubing();
+                            if (!for_measurement) {
+                              rotate([0, 0, 45]) {
+                                  if (global_in_place || true) {
+                                    if (number == 1) {
+                                      first_valve_tubing();
+                                    } else if (number == 2) {
+                                      second_valve_tubing();
+                                    } else if (number == 3) {
+                                      third_valve_tubing();
+                                    } else if (number == 4) {
+                                      fourth_valve_tubing();
+                                    }
                                   }
-                                }
+                              }
                             }
                         }
-                        translate([0, 0, -1]) cylinder(casing_height + 2, 11.01, 11.01, $fn=256);
+                        translate([0, 0, -1]) cylinder(casing_height + 2, 11/*.01*/, 11/*.01*/, $fn=256);
 
                         // Allow 10mm at the bottom for the compressed spring and plug; shift up the tubing holes
                         translate([0, 0, 10]) {
@@ -288,22 +335,11 @@ module piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2) {
                         }
                     }
                     
-                    // Flat side.
-                    rotate([0, 0, 45]) translate([-6.5, 9.02, 0]) cube([13, 1, casing_height]);
-                    rotate([0, 0, 45]) translate([-5, 9.02, 0]) cube([10, 2, casing_height]);
-                    rotate([0, 0, 45]) translate([-5, 9.02, 8]) cube([10, 2.8, casing_height - 16]);
-                    
-                    if (false) {
-                        // Bottom threads
-                        difference() {
-                            ScrewThread(28, 8, pitch=valve_thread_pitch);
-                            translate([0, 0, -1]) cylinder(12, 11.01, 11.01, $fn=256);
-                        }
-                        
-                        translate([0, 0, casing_height - 8]) difference() {
-                            translate([0, 0, 8]) rotate([0, 180, 0]) ScrewThread(28, 8, pitch=valve_thread_pitch);
-                            translate([0, 0, -1]) cylinder(12, 11.01, 11.01, $fn=256);
-                        }
+                    if (!for_measurement) {
+                      // Flat side.
+                      rotate([0, 0, 45]) translate([-6.5, 9/*.02*/, 0]) cube([13, 1, casing_height]);
+                      rotate([0, 0, 45]) translate([-5, 9/*.02*/, 0]) cube([10, 2, casing_height]);
+                      rotate([0, 0, 45]) translate([-5, 9/*.02*/, 8]) cube([10, 2.8, casing_height - 16]);
                     }
                 }
             }
@@ -311,7 +347,7 @@ module piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2) {
     }
 }
 
-module piston_valve_cap(valve_thread_pitch = 2, top_thickness = 2.0, valve_gap_expansion = 0.1) {
+module piston_valve_cap(valve_thread_pitch = 2, top_thickness = 2.0) {
 
 // 13
     difference() {
@@ -340,8 +376,10 @@ module sloped_tube(length, thickness = 2.0, bore_1=0.413, bore_2=0.413) {
 }
 
 module tuning_slide(leading_length, slide_length, joint_length, trailing_length,
-                    thickness = 2, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
-                    disassembled = false, inner_only = false, outer_only = false, shift = 0) {
+                    thickness = 2, slide_thickness = 1, slide_gap_expansion = 0.1,
+                    thickness_compensation = 0.05, bore=0.413,
+                    disassembled = false, inner_only = false, outer_only = false,
+                    shift = 0) {
   mmbore = inches_to_mm(bore);
   slide_thickness_inches = mm_to_inches(slide_thickness);
   slide_gap_expansion_inches = mm_to_inches(slide_gap_expansion);
@@ -351,7 +389,8 @@ module tuning_slide(leading_length, slide_length, joint_length, trailing_length,
       straight_tube(leading_length, thickness, bore);
       
       // Interior slide part (small size, thin).
-      translate([0, 0, leading_length]) straight_tube(slide_length, slide_thickness, bore);
+      translate([0, 0, leading_length])
+          straight_tube(slide_length,slide_thickness + thickness_compensation, bore);
   }
  
   exterior_hoffset = disassembled
@@ -443,8 +482,9 @@ module first_valve_tubing(bore = 0.413, thickness = 2) {
 }
 
 module first_valve_slide(bore = 0.413, thickness = 2) {
-  tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10, trailing_length = 10,
-               thickness = thickness, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
+  tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10,
+               trailing_length = 10, thickness = thickness, slide_thickness = 1,
+               slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore=0.413,
                disassembled = false, inner_only = true, outer_only = false, shift = 0);
 
   mmbore = inches_to_mm(bore);
@@ -457,8 +497,9 @@ module first_valve_slide(bore = 0.413, thickness = 2) {
   }
 
   translate([-20, 0, 0])
-      tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10, trailing_length = 10,
-                   thickness = 2, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
+      tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10,
+                   trailing_length = 10, thickness = 2, slide_thickness = 1,
+                   slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore=0.413,
                    disassembled = false, inner_only = true, outer_only = false, shift = 0);
 }
 
@@ -473,9 +514,11 @@ module second_valve_tubing(bore = 0.413) {
 
     translate([0, 0, 28]) rotate([180, 0, 0]) {
       // 15mm outside, 9mm inner slide length (10).
-      tuning_slide(leading_length = 10, slide_length = 10, joint_length = 4, trailing_length = 1,
-                   thickness = 2, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
-                   disassembled = false, inner_only = false, outer_only = true, shift = 0);
+      tuning_slide(leading_length = 10, slide_length = 10, joint_length = 4,
+                   trailing_length = 1, thickness = 2, slide_thickness = 1,
+                   slide_gap_expansion = 0.1, thickness_compensation = 0.05,
+                   bore = 0.413, disassembled = false, inner_only = false,
+                   outer_only = true, shift = 0);
     }
 
     // Tuning slide goes here.
@@ -484,9 +527,11 @@ module second_valve_tubing(bore = 0.413) {
     }
 
     translate([0, -16, 28]) rotate([180, 0, 0]) {
-      tuning_slide(leading_length = 10, slide_length = 10, joint_length = 4, trailing_length = 1,
-                   thickness = 2, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
-                   disassembled = false, inner_only = false, outer_only = true, shift = 0);
+      tuning_slide(leading_length = 10, slide_length = 10, joint_length = 4,
+                   trailing_length = 1, thickness = 2, slide_thickness = 1,
+                   slide_gap_expansion = 0.1, thickness_compensation = 0.05,
+                   bore = 0.413, disassembled = false, inner_only = false,
+                   outer_only = true, shift = 0);
     }
 
     translate([0, -16, 0]) straight_tube(3, bore=bore);
@@ -494,8 +539,9 @@ module second_valve_tubing(bore = 0.413) {
 }
 
 module second_valve_slide(bore = 0.413, thickness = 2) {
-  tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10, trailing_length = 10,
-               thickness = thickness, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
+  tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10,
+               trailing_length = 10, thickness = thickness, slide_thickness = 1,
+               slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore = 0.413,
                disassembled = false, inner_only = true, outer_only = false, shift = 0);
 
   mmbore = inches_to_mm(bore);
@@ -508,8 +554,9 @@ module second_valve_slide(bore = 0.413, thickness = 2) {
   }
 
   translate([-16, 0, 0]) {
-    tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10, trailing_length = 10,
-                 thickness = thickness, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
+    tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10,
+                 trailing_length = 10, thickness = thickness, slide_thickness = 1,
+                 slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore = 0.413,
                  disassembled = false, inner_only = true, outer_only = false, shift = 0);
   }
 }
@@ -527,6 +574,18 @@ module third_valve_tubing(bore = 0.413, thickness = 2) {
   // the fourth slide wider without doing anything weird.
 
   mmbore = inches_to_mm(bore);
+  brace_width = mmbore + (thickness * 2);
+
+  // Brace
+  difference() {
+    translate([-10, -40.1 + (brace_width / 2), -40]) cube([20, brace_width, 16]);
+    translate([0, 20.5, 0]) {
+      translate([0, -10, 56]) rotate([90, 0, 0]) {
+        translate([-9.9, -109, 36.19]) rotate([-90, 0, 0]) cylinder(100, brace_width/2, brace_width/2, $fn = 256);
+        translate([10.1, -109, 36.19]) rotate([-90, 0, 0]) cylinder(100, brace_width/2, brace_width/2, $fn = 256);
+      }
+    }
+  }
 
   // 3mm inside the valve casing so it overlaps cleanly.
   translate([0, -10, 56]) rotate([90, 0, 0]) {
@@ -583,8 +642,9 @@ module third_valve_tubing(bore = 0.413, thickness = 2) {
 }
 
 module third_valve_slide(bore = 0.413, thickness = 2) {
-  tuning_slide(leading_length = 10, slide_length = 68, joint_length = 10, trailing_length = 10,
-               thickness = thickness, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
+  tuning_slide(leading_length = 10, slide_length = 68, joint_length = 10,
+               trailing_length = 10, thickness = thickness, slide_thickness = 1,
+               slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore = 0.413,
                disassembled = false, inner_only = true, outer_only = false, shift = 0);
 
   mmbore = inches_to_mm(bore);
@@ -597,14 +657,34 @@ module third_valve_slide(bore = 0.413, thickness = 2) {
   }
 
   translate([-20, 0, 0])
-      tuning_slide(leading_length = 10, slide_length = 68, joint_length = 10, trailing_length = 10,
-                   thickness = 2, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
-                   disassembled = false, inner_only = true, outer_only = false, shift = 0);
+      tuning_slide(leading_length = 10, slide_length = 68, joint_length = 10,
+                   trailing_length = 10, thickness = 2, slide_thickness = 1,
+                   slide_gap_expansion = 0.1, thickness_compensation = 0.05,
+                   bore = 0.413, disassembled = false, inner_only = true,
+                   outer_only = false, shift = 0);
 }
 
 module fourth_valve_tubing(bore = 0.413, thickness = 2) {
   // No measurements to work with, so guess.
   mmbore = inches_to_mm(bore);
+
+  brace_width = mmbore + (thickness * 2);
+  
+  // Braces
+  difference() {
+    translate([0, -36 + (brace_width / 2), -60]) cube([100, brace_width, 16]);
+      translate([0, -10, 56]) rotate([90, 0, 0]) {
+        translate([0, -137.8, 11.5]) rotate([-90, 0, 0]) cylinder(100, brace_width/2, brace_width/2, $fn = 256);
+        translate([99.9, -137.8, 11.5]) rotate([-90, 0, 0]) cylinder(100, brace_width/2, brace_width/2, $fn = 256);
+      }
+  }
+  difference() {
+    translate([0, -36 + (brace_width / 2), 9]) cube([100, brace_width, 16]);
+      translate([0, -10, 56]) rotate([90, 0, 0]) {
+        translate([0, -137.8, 11.5]) rotate([-90, 0, 0]) cylinder(100, brace_width/2, brace_width/2, $fn = 256);
+        translate([99.9, -137.8, 11.5]) rotate([-90, 0, 0]) cylinder(100, brace_width/2, brace_width/2, $fn = 256);
+      }
+  }
 
   // 3mm inside the valve casing so it overlaps cleanly.
   translate([0, -10, 56]) rotate([90, 0, 0]) {
@@ -665,8 +745,9 @@ module fourth_valve_tubing(bore = 0.413, thickness = 2) {
 }
 
 module fourth_valve_slide(bore = 0.413, thickness = 2) {
-  tuning_slide(leading_length = 5, slide_length = 102, joint_length = 5, trailing_length = 5,
-               thickness = thickness, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
+  tuning_slide(leading_length = 5, slide_length = 102, joint_length = 5,
+               trailing_length = 5, thickness = thickness, slide_thickness = 1,
+               slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore = 0.413,
                disassembled = false, inner_only = true, outer_only = false, shift = 0);
 
   mmbore = inches_to_mm(bore);
@@ -690,9 +771,11 @@ module fourth_valve_slide(bore = 0.413, thickness = 2) {
   }
 
   translate([100.1, 0, 0])
-      tuning_slide(leading_length = 5, slide_length = 102, joint_length = 5, trailing_length = 5,
-                   thickness = 2, slide_thickness = 1, slide_gap_expansion = 0.1, bore=0.413,
-                   disassembled = false, inner_only = true, outer_only = false, shift = 0);
+      tuning_slide(leading_length = 5, slide_length = 102, joint_length = 5,
+                   trailing_length = 5, thickness = 2, slide_thickness = 1,
+                   slide_gap_expansion = 0.1, thickness_compensation = 0.05,
+                   bore = 0.413, disassembled = false, inner_only = true,
+                   outer_only = false, shift = 0);
 }
 
 module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
@@ -707,7 +790,7 @@ module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
   difference() {
     union() {
       // Coupler for fastening receiver outer pipe.
-      translate([-15, 0, 40.4]) rotate([0, 90, 0]) small_morse_receiver_coupler(bore = bore);
+      translate([-30, 0, 40.4]) rotate([0, 90, 0]) small_morse_receiver_coupler(bore = bore);
 
       translate([9, 0, 56]) rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
       translate([9 + (spacing), 0, 40]) rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
@@ -739,21 +822,23 @@ module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
   }
 }
 
-module valve_parts(bore = 0.413) {
-  translate([0, 40, 0]) piston_valve(bore, false);
-  translate([40, 40, 0]) piston_valve(bore, true);
-  translate([80, 40, 0]) piston_valve(bore, false);
-  translate([120, 40, 0]) piston_valve(bore, true);
+module valve_parts(bore = 0.413, enable_caps = true) {
+  translate([0, 40, 0]) piston_valve(bore, number = 1);
+  translate([40, 40, 0]) piston_valve(bore, number = 2);
+  translate([80, 40, 0]) piston_valve(bore, number = 3);
+  translate([120, 40, 0]) piston_valve(bore, number = 4);
   
-  translate([0, -60, 0]) piston_valve_cap();
-  translate([40, -60, 0]) piston_valve_cap();
-  translate([80, -60, 0]) piston_valve_cap();
-  translate([120, -60, 0]) piston_valve_cap();
+  if (enable_caps) {
+    translate([0, -60, 0]) piston_valve_cap();
+    translate([40, -60, 0]) piston_valve_cap();
+    translate([80, -60, 0]) piston_valve_cap();
+    translate([120, -60, 0]) piston_valve_cap();
 
-  translate([0, -100, 0]) piston_valve_cap();
-  translate([40, -100, 0]) piston_valve_cap();
-  translate([80, -100, 0]) piston_valve_cap();
-  translate([120, -100, 0]) piston_valve_cap();
+    translate([0, -100, 0]) piston_valve_cap();
+    translate([40, -100, 0]) piston_valve_cap();
+    translate([80, -100, 0]) piston_valve_cap();
+    translate([120, -100, 0]) piston_valve_cap();
+  }
 }
 
 
@@ -1151,7 +1236,7 @@ module spit_valve(enable_flap = true, enable_mount = true) {
           }
           // Hook block
           translate([-38.5, -5, -13.5]) rotate([0, -31, 0]) translate([0, 0, -2]) {
-            cube([14.5, 10, 3]);
+            cube([11.5, 10, 3]);
             translate([0, 3, 0]) cube([4, 4, 6]);
             translate([-3, 3, 4]) cube([7, 4, 2]); 
             
@@ -1179,26 +1264,32 @@ if (global_build_group == 0) {
 } else if (global_build_group == 1) {
     // Group 1: Valves, valve caps, and valve casing.
     translate([100, 0, casing_height]) rotate([0, 180, 0]) valve_block();
-//    valve_parts();
-
 } else if (global_build_group == 2) {
+    valve_parts(enable_caps = false);
+} else if (global_build_group == 3) {
     // Group 2: Bell parts.
     bell();
-} else if (global_build_group == 3) {
+} else if (global_build_group == 4) {
     // Output the spit valve lever.  This is a small part that requires somewhat
     // intricate support, and probably has to use dissolvable support as a result,
     // so output it as its own file.
     translate([0, 45, 8]) rotate([90, 0, 0]) spit_valve(enable_mount = false, enable_flap = true);
-} else if (global_build_group == 4) {
-    // Tuning slides and receiver - use ONLY *external* support (manual paint) or dissolvable
+} else if (global_build_group == 5) {
+    // Tuning slides - use ONLY *external* support (manual paint) or dissolvable
     // supports (or both).
-    small_morse_receiver(disassembled = true);
 
     translate([50, 0, 20]) rotate([180, 0, 0]) first_valve_slide();
     translate([-50, 0, 20]) rotate([180, 0, 0]) second_valve_slide();
     translate([-50, 50, 78]) rotate([180, 0, 0]) third_valve_slide();    
     translate([-50, -50, 107]) rotate([180, 0, 0]) fourth_valve_slide();
+} else if (global_build_group == 6) {
+    // Mouthpiece receiver - use ONLY *external* support (manual paint) or dissolvable
+    // supports (or both).
+    small_morse_receiver(disassembled = true);
+} else if (global_build_group == 7) {
+    piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2, for_measurement = true);
 }
+
 
 // translate([0, 0, 21.5]) piston_valve(0.413, false);
 
