@@ -15,8 +15,6 @@ use <list-comprehension-demos/skin.scad>
 
 // To do list:
 //
-// Fix valve mount position
-// Fix tuning slide mount position
 // Fix spit valve position
 // Redo fourth valve tubing
 
@@ -107,9 +105,12 @@ module receiver(outer_diameter_inches, taper_in_inches_per_inch, taper_length_in
                      outer_pipe_outer_diameter / 2, $fn = 256);
             straight_tube(lead_pipe_length_in_mm - 10, 1.0,
                           mm_to_inches(outer_pipe_inner_diameter));
+                          
+                          
             translate([-4, outer_tube_radius - 3, 0]) cube([3, 11, 8]);
             translate([1, outer_tube_radius - 3, 0]) cube([3, 11, 8]);
-            rotate([0, 0, 15]) {
+            
+            translate([-7.7, 0, 0]) rotate([0, 0, 15]) {
               difference() {
                 translate([offset, -8, 26]) cube([32.35 + (2 * thickness_in_mm), 4, 33]);
                 translate([offset + (2 * thickness_in_mm) + 17.35, 0, 48.9]) {
@@ -612,7 +613,7 @@ module fourth_valve_tubing(bore = 0.413, thickness = 2) {
     // Tuning slide here
     // Tuning slide goes here.
     if (global_in_place) {
-      translate([127.1, -116, 11.5]) rotate([-90, 0, 90]) fourth_valve_slide();
+      translate([127.1, -116, 11.5]) rotate([-90, 0, 90]) translate([0, 0, -105]) fourth_valve_slide();
     }
     
     translate([121.9, 0, 11.5]) rotate([-90, 0, 90]) {
@@ -679,7 +680,7 @@ module valve_block(bore = 0.413, fourth_valve = true) {
       translate([9 + (spacing * 2), 0, 56])
           rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
       // Valve mount
-      translate([17.5, -23, 63.35]) cube([40, 23.5, 5]);
+      translate([17.5, -23, 71.2]) cube([40, 23.5, 5]);
     }
     translate([0, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
     translate([spacing, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
@@ -846,15 +847,16 @@ module bell_small_curve(bore=0.413, thickness = 2.0) {
         curved_tube(slices = 100, radius_1 = 8.5 + thickness,
                     radius_2 = 7 + thickness, bend_radius = 54,
                     thickness = thickness);
+
         // Spit valve hole rim
-        translate([-63, 0, 23.5]) rotate([180, 105, 0]) cylinder(3.5, 2.75, 2.75, $fn = 256);
+        translate([-59, 0, 23.5]) rotate([180, 111, 0]) cylinder(3.5, 2.75, 2.75, $fn = 256);
       }
       // Spit valve hole
-      translate([-63, 0, 23.5]) rotate([180, 105, 0]) cylinder(20, 1.5, 1.5, $fn = 256);
+      translate([-59, 0, 23.5]) rotate([180, 111, 0]) translate([0, 0, -2]) cylinder(20, 1.5, 1.5, $fn = 256);
     }
     // translate([-62, -1, 23.5]) rotate([180, 105, 7.5]) cylinder(20, 1.5, 1.5, $fn = 256);
 
-    translate([-70, 0, 15]) rotate([0, -15, 180]) translate([-3, 0, 0]) spit_valve(enable_mount = true, enable_flap = true);
+    translate([-65.2, 0, 15]) rotate([0, -16, 180]) translate([-3, 0, 0]) spit_valve(enable_mount = true, enable_flap = true);
 }
     
 module curved_tube(bore=0.413, thickness = 2.0, radius_1 = 10,
@@ -872,7 +874,7 @@ module curved_tube(bore=0.413, thickness = 2.0, radius_1 = 10,
                             circle(radius_1 - (radius_1 - radius_2) / slices * i), $fn = 256)]);
             if (enable_brace) {
                 translate([-25, -5, bend_radius - midwidth - 20]) cube([30, 10, 20 + midwidth]);
-                translate([-25, -21.6, bend_radius - midwidth - 20]) cube([30, 21.6, 20 + midwidth]);   
+                translate([-20, -21.6, bend_radius - midwidth - 20]) cube([25, 21.6, 20 + midwidth]);   
             }
         }
 
@@ -995,7 +997,9 @@ module spit_valve(enable_flap = true, enable_mount = true) {
               translate([0, -3, -2]) cube([10, 16, 21]);
               translate([-0.1, 2.8, 0]) cube([10.2, 4.4, 19]);
               translate([-0.1, 1.5, 0]) cube([10.2, 7, 11]);
-              rotate([0, 90, 0]) translate([9, 5, -5]) rotate([0, -0.5, 0]) cylinder(30, 10, 10, $fn = 256);
+              
+              // Avoid clogging the tube.
+              rotate([0, 90, 0]) translate([9, 5, -5]) rotate([0, -3, 0]) translate([1, 0, -15]) cylinder(50, 10, 10, $fn = 256);
               translate([0, 0, 19]) rotate([0, 10, 0]) translate([-5, -5, 0]) cube([20, 20, 30]);
             }
           }
