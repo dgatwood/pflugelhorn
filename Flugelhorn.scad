@@ -257,14 +257,16 @@ module piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2) {
                         union() {
                             translate([0, 0, 0]) cylinder(casing_height, 13, 13, $fn=256);
                             rotate([0, 0, 45]) {
-                                if (number == 1) {
-                                  first_valve_tubing();
-                                } else if (number == 2) {
-                                  second_valve_tubing();
-                                } else if (number == 3) {
-                                  third_valve_tubing();
-                                } else if (number == 4) {
-                                  fourth_valve_tubing();
+                                if (global_in_place) {
+                                  if (number == 1) {
+                                    first_valve_tubing();
+                                  } else if (number == 2) {
+                                    second_valve_tubing();
+                                  } else if (number == 3) {
+                                    third_valve_tubing();
+                                  } else if (number == 4) {
+                                    fourth_valve_tubing();
+                                  }
                                 }
                             }
                         }
@@ -693,7 +695,7 @@ module fourth_valve_slide(bore = 0.413, thickness = 2) {
 module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
   casing_height = 91.5;
   spacing = 25.4;
-//  spacing = 40;
+
   translate([0, 0, 0]) piston_valve_casing(0.413, number = 1);
   translate([spacing, 0, 0]) piston_valve_casing(0.413, number = 2);
   translate([spacing * 2, 0, 0]) piston_valve_casing(0.413, number = 3);
@@ -701,12 +703,15 @@ module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
 
   difference() {
     union() {
+      // Coupler for fastening receiver outer pipe.
       translate([-15, 0, 40.4]) rotate([0, 90, 0]) small_morse_receiver_coupler(bore = bore);
+
       translate([9, 0, 56]) rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
       translate([9 + (spacing), 0, 40]) rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
       translate([9 + (spacing * 2), 0, 56])
           rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
-      // Valve mount
+
+      // Valve mount.
       translate([17.5, -23, 71.2]) cube([40, 23.5, 5]);
 
       // Coupler to bell short straight pipe.
@@ -719,10 +724,13 @@ module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
         translate([47.7, -28, 236]) straight_tube(3, bore = mm_to_inches(12 + (2 * thickness) + 0.2), thickness = thickness);
       }
     }
+
+    // Valve interior cutouts (approximate, not including flat edge).
     translate([0, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
     translate([spacing, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
     translate([spacing * 2, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
     translate([spacing * 3, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
+
     // Valve mount hole
     translate([38.5, -19.275, 60]) rotate([0, 0, 90]) cylinder(30, 2, 2, $fn=256);
   }
@@ -995,20 +1003,16 @@ module bell_long_straight_pipe(bore=0.413, thickness = 2.0, coupler_mode = false
 module bell(bore=0.413, thickness = 2.0) {
     bell_length = 337;
     
-if (false) {
     bell_main_segment(bore = bore, height = bell_length, thickness = thickness);
 
     // Big curve with couplers
     bell_big_curve_with_couplers(bore = bore, thickness = thickness, bell_length = bell_length);
     
     bell_long_straight_pipe(bore = bore, thickness = thickness);
-}
 
     mmbore = inches_to_mm(bore);                                         
 
-if (false) {
     bell_small_curve_with_couplers(bore = bore, thickness = thickness, bell_length = bell_length);
-}
 
     bell_short_straight_pipe(bore = bore, thickness = thickness);
         
@@ -1022,7 +1026,7 @@ if (false) {
 // Midpoint of curve is 23mm.
 //
 // From end of curve back to valves, slope is conical (linearly).  As best I can tell, the
-// first curve is also roughly linear, to within 0.5mm after the entire lengt of the curve,
+// first curve is also roughly linear, to within 0.5mm after the entire length of the curve,
 // so I will model both curves and all straight pipes other than the bell segment linearly,
 // beginning from the start of the first (big) curve all the way back to the valves.
 //
@@ -1122,7 +1126,7 @@ module spit_valve(enable_flap = true, enable_mount = true) {
 // piston_valve_cap();
 
 // Build instrument in place
-if (true) {
+if (global_in_place) {
     bell();
     translate([86.3, -17.6, 323.5]) rotate([0, -90, 15]) rotate([0, 0, 180]) valve_block();
     translate([47.3, -27.6, 449]) rotate([0, 180, -165]) small_morse_receiver(disassembled = false);
