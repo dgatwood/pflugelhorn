@@ -134,7 +134,20 @@ module receiver(outer_diameter_inches, taper_in_inches_per_inch, taper_length_in
     }
   }
 }
- 
+
+module receiver_coupler(outer_diameter_inches, slide_gap_expansion = 0.2, thickness_in_mm = 2.4, bore = 0.413) {
+  mouthpiece_outer_diameter = inches_to_mm(outer_diameter_inches);
+  mmbore = inches_to_mm(bore);
+  outer_tube_radius = MAX((mouthpiece_outer_diameter + thickness_in_mm) / 2,
+                          ((mmbore + thickness_in_mm) / 2));
+  outer_pipe_inner_diameter = (outer_tube_radius + slide_gap_expansion) * 2;
+  outer_pipe_outer_diameter = outer_pipe_inner_diameter + (thickness_in_mm * 2);
+  
+  coupler_inner_diameter = outer_pipe_outer_diameter + 0.2;
+
+  straight_tube(20, bore = mm_to_inches(coupler_inner_diameter), thickness = 3.0);
+}
+
 /* A receiver for a standard large morse taper (cornet-style) flugelhorn mouthpiece. */
 module large_morse_receiver(lead_pipe_length_in_mm = 114, slide_gap_expansion = 0.2,
                 bore = 0.413, thickness_in_mm = 2.4, nubs = true, tuning = true,
@@ -143,6 +156,16 @@ module large_morse_receiver(lead_pipe_length_in_mm = 114, slide_gap_expansion = 
            slide_gap_expansion = slide_gap_expansion, bore = bore,
            thickness_in_mm = thickness_in_mm, nubs = nubs, tuning = tuning,
            disassembled = disassembled);
+}
+
+module large_morse_receiver_coupler(slide_gap_expansion = 0.2, bore = 0.413, thickness_in_mm = 2.4) {
+  receiver_coupler(0.4350, slide_gap_expansion = slide_gap_expansion, bore = bore,
+           thickness_in_mm = thickness_in_mm);
+}
+
+module small_morse_receiver_coupler(slide_gap_expansion = 0.2, bore = 0.413, thickness_in_mm = 2.4) {
+  receiver_coupler(0.395, slide_gap_expansion = slide_gap_expansion, bore = bore,
+           thickness_in_mm = thickness_in_mm);
 }
 
 module small_morse_receiver(lead_pipe_length_in_mm = 114, slide_gap_expansion = 0.2,
@@ -678,6 +701,7 @@ module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
 
   difference() {
     union() {
+      translate([-15, 0, 40.4]) rotate([0, 90, 0]) small_morse_receiver_coupler(bore = bore);
       translate([9, 0, 56]) rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
       translate([9 + (spacing), 0, 40]) rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
       translate([9 + (spacing * 2), 0, 56])
