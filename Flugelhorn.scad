@@ -851,13 +851,15 @@ module bell_small_curve(bore=0.413, thickness = 2.0) {
         curved_tube(slices = 100, radius_1 = 8.5 + thickness,
                     radius_2 = 7 + thickness, bend_radius = 58,
                     thickness = thickness);
-        translate([-62, -1, 23.5]) rotate([180, 105, 7.5]) cylinder(3.5, 2.75, 2.75, $fn = 256);
+        // Spit valve hole rim
+        translate([-63, 0, 23.5]) rotate([180, 105, 0]) cylinder(3.5, 2.75, 2.75, $fn = 256);
       }
-      translate([-62, -1, 23.5]) rotate([180, 105, 7.5]) cylinder(20, 1.5, 1.5, $fn = 256);
+      // Spit valve hole
+      translate([-63, 0, 23.5]) rotate([180, 105, 0]) cylinder(20, 1.5, 1.5, $fn = 256);
     }
     // translate([-62, -1, 23.5]) rotate([180, 105, 7.5]) cylinder(20, 1.5, 1.5, $fn = 256);
 
-    translate([-69, -2, 15]) rotate([0, -15, 187.5]) translate([-3, 0, 0]) spit_valve(enable_mount = true, enable_flap = true);
+    translate([-70, 0, 15]) rotate([0, -15, 180]) translate([-3, 0, 0]) spit_valve(enable_mount = true, enable_flap = true);
 }
     
 module curved_tube(bore=0.413, thickness = 2.0, radius_1 = 10,
@@ -971,16 +973,47 @@ module spit_valve(enable_flap = true, enable_mount = true) {
 
   if (enable_flap) {
     translate([1, 0, 10]) rotate([0, 90, 0]) {
+//      cube([30, 30, 30]);
       difference() {
         cylinder(4.5, 5, 5, $fn = 256);
         cylinder(3.5, 4.5, 4.5, $fn = 256);
       }
-//      translate([-30, -5, 4]) cube([30, 10, 4]);
+      // translate([-100, 0, 4]) translate([0, 4, 0]) cube([100, 8, 4]);
+      difference() {
+        translate([0, 0, -96]) rotate([90, -90, 0]) translate([0, 0, -2]) rotate_extrude(angle = 45, $fn = 256) {
+          translate([100, 0, 0]) square([6, 4]);
+        }
+        translate([-36, 15, 1]) rotate([90, 0, 0]) cylinder(30, 1.2, 1.2, $fn = 256);        
+      }
+      // Hook
+      translate([-15, -2, -1.5]) cube([4, 4, 6]);
+      translate([-15, -2, -1.5]) cube([7, 4, 2]);
     }
   }
   
   if (enable_mount) {
-    
+    translate([1, 0, 10]) rotate([0, 90, 0]) {
+      difference() {
+        union() {
+          translate([-33.5, -5, -13.5]) rotate([0, -31, 0]) translate([0, 0, -2]) {
+            difference() {
+              translate([0, -3, -2]) cube([10, 16, 21]);
+              translate([-0.1, 2.8, 0]) cube([10.2, 4.4, 19]);
+              translate([-0.1, 1.5, 0]) cube([10.2, 7, 11]);
+              rotate([0, 90, 0]) translate([9, 5, -5]) rotate([0, -0.5, 0]) cylinder(30, 10, 10, $fn = 256);
+              translate([0, 0, 19]) rotate([0, 10, 0]) translate([-5, -5, 0]) cube([20, 20, 30]);
+            }
+          }
+          // Hook block
+          translate([-36.5, -5, -13.5]) rotate([0, -31, 0]) translate([0, 0, -2]) {
+            cube([5, 10, 3]);
+            translate([-2, 3.5, 1.5]) cube([7, 3, 1.5]);
+            translate([-2.5, 3.5, 0]) cube([1.5, 3, 3]);
+          }
+        }
+        translate([-36, 15, 1]) rotate([90, 0, 0]) cylinder(30, 1.2, 1.2, $fn = 256);        
+      }
+    }
   }
 
 //   translate([0, -5, 0]) cube(10);
@@ -992,8 +1025,8 @@ module spit_valve(enable_flap = true, enable_mount = true) {
 // Build instrument in place
 if (true) {
     bell();
-//    translate([78.6, -19.6, 247]) rotate([0, -90, 15]) valve_block();
-//    translate([39.6, -29.6, 449]) rotate([0, 180, -165]) small_morse_receiver(disassembled = false);
+    translate([78.6, -19.6, 323.5]) rotate([0, -90, 15]) rotate([0, 0, 180]) valve_block();
+    translate([39.6, -29.6, 449]) rotate([0, 180, -165]) small_morse_receiver(disassembled = false);
 } else {
     valve_block();
     // valve_parts();
