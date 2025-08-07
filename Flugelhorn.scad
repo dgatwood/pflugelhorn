@@ -15,8 +15,10 @@ use <list-comprehension-demos/skin.scad>
 
 // To do list:
 //
-// Split main part of the bell somehow to get it below 350mm.
-
+// 1.  Check valves 1, 3, and 4, and if necessary, reduce width by 0.02mm.
+// 2.  Split main part of the bell for people whose printers can't print
+//     something that tall (337mm).
+// 3.  Reenable valve_parts() when I'm done tweaking things.
 
 /*
  * Note that unless otherwise noted, all dimensions are in mm except for
@@ -24,7 +26,7 @@ use <list-comprehension-demos/skin.scad>
  * sizes are traditionally measured.
  */
  
-global_build_group = 0;
+global_build_group = 2;
 high_quality = false;
 
 casing_height = 101.5;  // Do not modify.
@@ -395,7 +397,7 @@ module first_valve_tubing(bore = 0.413, thickness = 2) {
                     thickness = thickness, start_degrees = 135,
                     end_degrees = 180, reversed = true); 
     }
-    translate([-9.9, 0, 1.5]) rotate([0, -45, 0]) {
+    translate([-9.9, 0, 1.49]) rotate([0, -45, 0]) {
         translate([10, -10, 0]) rotate([0, 0, 90]) {
             curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
                         radius_2 = mmbore / 2 + thickness, bend_radius = 10,
@@ -406,21 +408,21 @@ module first_valve_tubing(bore = 0.413, thickness = 2) {
     
     // 53mm to top of top hole
     // 5.2 on y would be aligned with top of hole
-    translate([-9.9, -53, 36.2]) rotate([-90, 0, 0]) {
+    translate([-9.9, -53, 36.19]) rotate([-90, 0, 0]) {
         tuning_slide(leading_length = 0, slide_length = 16, joint_length = 5, trailing_length = 22,
                      bore=bore, disassembled = true, outer_only = true, shift = 0);
     }
     
     // Tuning slide goes here.
     if (global_in_place) {
-      translate([10.1, -63, 15.7]) rotate([-90, 0, 0]) first_valve_slide();
+      translate([10.1, -63, 15.69]) rotate([-90, 0, 0]) first_valve_slide();
     }
     
-    translate([10.1, -53, 36.2]) rotate([-90, 0, 0]) {
+    translate([10.1, -53, 36.19]) rotate([-90, 0, 0]) {
         tuning_slide(leading_length = 0, slide_length = 16, joint_length = 5, trailing_length = 6,
                      bore=bore, disassembled = true, outer_only = true, shift = 0);
     }
-    translate([10.1, 4, 1.5]) rotate([0, 45, 0]) {
+    translate([10.1, 4, 1.49]) rotate([0, 45, 0]) {
         translate([-10, -30, 0]) rotate([0, 0, 90]) {
             curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
                         radius_2 = mmbore / 2 + thickness, bend_radius = 10,
@@ -535,7 +537,7 @@ module third_valve_tubing(bore = 0.413, thickness = 2) {
                     thickness = thickness, start_degrees = 135,
                     end_degrees = 180, reversed = true); 
     }
-    translate([-9.9, 0, 1.5]) rotate([0, -45, 0]) {
+    translate([-9.9, 0, 1.49]) rotate([0, -45, 0]) {
         translate([10, -10, 0]) rotate([0, 0, 90]) {
             curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
                         radius_2 = mmbore / 2 + thickness, bend_radius = 10,
@@ -546,17 +548,17 @@ module third_valve_tubing(bore = 0.413, thickness = 2) {
     
     // 53mm to top of top hole  -- 109
     // 5.2 on y would be aligned with top of hole
-    translate([-9.9, -109, 36.2]) rotate([-90, 0, 0]) {
+    translate([-9.9, -109, 36.19]) rotate([-90, 0, 0]) {
         tuning_slide(leading_length = 0, slide_length = 68, joint_length = 5, trailing_length = 26,
                      bore=bore, disassembled = true, outer_only = true, shift = 0);
     }
     
     // Tuning slide goes here.
     if (global_in_place) {
-      translate([10.1, -119, 15.7]) rotate([-90, 0, 0]) third_valve_slide();
+      translate([10.1, -119, 15.69]) rotate([-90, 0, 0]) third_valve_slide();
     }
     
-    translate([10.1, -109, 36.2]) rotate([-90, 0, 0]) {
+    translate([10.1, -109, 36.19]) rotate([-90, 0, 0]) {
         tuning_slide(leading_length = 0, slide_length = 68, joint_length = 5, trailing_length = 10,
                      bore=bore, disassembled = true, outer_only = true, shift = 0);
     }
@@ -569,7 +571,7 @@ module third_valve_tubing(bore = 0.413, thickness = 2) {
         }
     }
     
-    translate([10.1, -16, 1.5]) {
+    translate([10.1, -16, 1.49]) {
         curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
                     radius_2 = mmbore / 2 + thickness, bend_radius = 10,
                     thickness = thickness, start_degrees = 0,
@@ -616,7 +618,7 @@ module fourth_valve_tubing(bore = 0.413, thickness = 2) {
                     end_degrees = 90, reversed = true); 
     }
     
-    translate([0, -137.9, 11.5]) rotate([-90, 0, 0]) {
+    translate([0, -137.8, 11.5]) rotate([-90, 0, 0]) {
             tuning_slide(leading_length = 0, slide_length = 102, joint_length = 5,
                          trailing_length = 5, bore=bore, disassembled = false,
                          outer_only = true, shift = 0);
@@ -629,7 +631,7 @@ module fourth_valve_tubing(bore = 0.413, thickness = 2) {
       translate([0, -116, 11.5]) rotate([-90, 0, 0]) translate([0, 0, extend ? -105 : 0]) fourth_valve_slide();
     }
     
-    translate([99.9, -137.9, 11.5]) rotate([-90, 0, 0]) {
+    translate([99.9, -137.8, 11.5]) rotate([-90, 0, 0]) {
             tuning_slide(leading_length = 0, slide_length = 102, joint_length = 5,
                          trailing_length = 5, bore=bore, disassembled = false,
                          outer_only = true, shift = 0);
@@ -846,9 +848,9 @@ module bell_main_segment(bore=0.413, start_slice = 0, stop_slice = undef, height
                              bell_main_segment_inner_radius(nextZOffset) + widthAtTop +
                              (coupler_mode ? widthAtTop + .1 : 0), $fn = 256);
                     cylinder(sliceHeight, bell_main_segment_inner_radius(zOffset) +
-                             (coupler_mode ? widthAtBottom + .1 : 0),
+                             (coupler_mode ? widthAtBottom : 0),
                              bell_main_segment_inner_radius(nextZOffset) +
-                             (coupler_mode ? widthAtTop + .1 : 0), $fn = 256);
+                             (coupler_mode ? widthAtTop : 0), $fn = 256);
                 }
             }
         }
@@ -886,7 +888,8 @@ module bell_big_curve(bore=0.413, thickness = 2.0, coupler_mode = 0) {
                 radius_1 = 12.29 + thickness + ((coupler_mode > 0) ? thickness + 0.1 : 0),
                 radius_2 = 9.5 + thickness + ((coupler_mode > 0) ? thickness + 0.1 : 0),
                 bend_radius = bend_radius,
-                thickness = thickness, enable_brace = (coupler_mode == 0),
+                thickness = thickness + (coupler_mode ? 0.2 : 0),
+                enable_brace = (coupler_mode == 0),
                 emit_from_slice = ((coupler_mode == 1) ? 0 : ((coupler_mode == 2) ? (number_of_slices * .98) : undef)),
                 emit_to_slice = ((coupler_mode == 1) ? (number_of_slices / 50) : ((coupler_mode == 2) ? number_of_slices : undef)));
 }
@@ -894,7 +897,9 @@ module bell_big_curve(bore=0.413, thickness = 2.0, coupler_mode = 0) {
 module bell_small_curve_with_couplers(bore=0.413, thickness = 2.0, bell_length = 337) {
   translate([99.85, -14, 121]) rotate([0, 180, 15]) {
     bell_small_curve(bore = bore, thickness = thickness);
+    // Large side
     bell_small_curve(bore = bore, thickness = thickness, coupler_mode = 1);
+    // Small side
     bell_small_curve(bore = bore, thickness = thickness, coupler_mode = 2);
   }
 
@@ -925,7 +930,7 @@ module bell_small_curve(bore=0.413, thickness = 2.0, coupler_mode = 0) {
         curved_tube(slices = number_of_slices,
                     radius_1 = 8.5 + thickness + ((coupler_mode > 0) ? thickness + 0.1 : 0),
                     radius_2 = 7 + thickness + ((coupler_mode > 0) ? thickness + 0.1 : 0),
-                    bend_radius = 54, thickness = thickness,
+                    bend_radius = 54, thickness = thickness + ((coupler_mode > 0) ? 0.2 : 0),
                     emit_from_slice = ((coupler_mode == 1) ? 0 : ((coupler_mode == 2) ? (number_of_slices * .96) : undef)),
                     emit_to_slice = ((coupler_mode == 1) ? (number_of_slices / 25) : ((coupler_mode == 2) ? number_of_slices : undef)));
 
@@ -995,9 +1000,10 @@ module bell_big_curve_with_couplers(bore=0.413, thickness = 2.0, bell_length = 3
 }
 
 module bell_long_straight_pipe(bore=0.413, thickness = 2.0, coupler_mode = false) {
-    id_2 = 19 + (coupler_mode ? ((2 * thickness) + 0.2) : 0);
+    // Experimentally, 0.2 is too much gap here, so switched to 0.1.
+    id_2 = 19 + (coupler_mode ? ((2 * thickness) + 0.1) : 0);
     id_2_inches = mm_to_inches(id_2);
-    id_1 = 17 + (coupler_mode ? ((2 * thickness) + 0.2) : 0);
+    id_1 = 17 + (coupler_mode ? ((2 * thickness) + 0.1) : 0);
     id_1_inches = mm_to_inches(id_1);
 
     translate([152, 0, 121]) sloped_tube(216, thickness = thickness, bore_1 = id_1_inches,
@@ -1077,9 +1083,9 @@ module bell(bore=0.413, thickness = 2.0) {
 }
 
 module bell_short_straight_pipe(bore=0.413, thickness = 2.0, coupler_mode = false) {
-    id_3 = 14 + (coupler_mode ? (2 * thickness + 0.2) : 0);
+    id_3 = 14 + (coupler_mode ? ((2 * thickness) + 0.2) : 0);
     id_3_inches = mm_to_inches(id_3);
-    id_4 = 12 + (coupler_mode ? (2 * thickness + 0.2) : 0);
+    id_4 = 12 + (coupler_mode ? ((2 * thickness) + 0.1) : 0);
     id_4_inches = mm_to_inches(id_4);
     
     translate([47.7, -28, 121]) sloped_tube(115, thickness = 2, bore_1 = id_3_inches,
@@ -1121,8 +1127,10 @@ module spit_valve(enable_flap = true, enable_mount = true) {
         translate([-36, 15, 1]) rotate([90, 0, 0]) cylinder(30, 1.2, 1.2, $fn = 256);        
       }
       // Hook
-      translate([-15, -2, -1.5]) cube([4, 4, 6]);
-      translate([-15, -2, -1.5]) cube([7, 4, 2]);
+      translate([-15, -2, -1.5]) {
+        cube([4, 4, 6]);
+        cube([7, 4, 2]);
+      }
     }
   }
   
@@ -1142,10 +1150,13 @@ module spit_valve(enable_flap = true, enable_mount = true) {
             }
           }
           // Hook block
-          translate([-36.5, -5, -13.5]) rotate([0, -31, 0]) translate([0, 0, -2]) {
-            cube([5, 10, 3]);
-            translate([-2, 3.5, 1.5]) cube([7, 3, 1.5]);
-            translate([-2.5, 3.5, 0]) cube([1.5, 3, 3]);
+          translate([-38.5, -5, -13.5]) rotate([0, -31, 0]) translate([0, 0, -2]) {
+            cube([14.5, 10, 3]);
+            translate([0, 3, 0]) cube([4, 4, 6]);
+            translate([-3, 3, 4]) cube([7, 4, 2]); 
+            
+//            translate([-2, 3.5, 1.5]) cube([7, 3, 1.5]);
+//            translate([-2.5, 3.5, 0]) cube([1.5, 3, 3]);  @@@
           }
         }
         translate([-36, 15, 1]) rotate([90, 0, 0]) cylinder(30, 1.2, 1.2, $fn = 256);        
@@ -1168,7 +1179,7 @@ if (global_build_group == 0) {
 } else if (global_build_group == 1) {
     // Group 1: Valves, valve caps, and valve casing.
     translate([100, 0, casing_height]) rotate([0, 180, 0]) valve_block();
-    valve_parts();
+//    valve_parts();
 
 } else if (global_build_group == 2) {
     // Group 2: Bell parts.
