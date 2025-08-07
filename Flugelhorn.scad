@@ -93,21 +93,32 @@ module receiver(outer_diameter_inches, taper_in_inches_per_inch, taper_length_in
           translate([0, 0, taper_length + receiver_gap - .01]) cylinder(lead_pipe_interior_length + 0.02, mouthpiece_outer_diameter_small / 2, mmbore / 2, $fn=256);    
       }
   }
-  
+
+  // The lead pipe has to slide into something.
+  outer_pipe_inner_diameter = (outer_tube_radius + slide_gap_expansion) * 2;
+  outer_pipe_outer_diameter = outer_pipe_inner_diameter + (thickness_in_mm * 2);
+
+  final_external_radius = outer_tube_radius / 2;
   if (tuning) {
-    // The lead pipe has to slide into something.
-    inner_diameter = (outer_tube_radius + slide_gap_expansion) * 2;
-    outer_diameter = inner_diameter + (thickness_in_mm * 2);
+    offset = (outer_pipe_outer_diameter / 2) - (2 * thickness_in_mm);
     translate([0, disassembled ? 30 : 0, disassembled ? 0 : 10]) {
       color([1, .5, .5]) {
         difference() {
           union() {
-            cylinder(lead_pipe_length_in_mm - 10, outer_diameter / 2, outer_diameter / 2,
-                     $fn = 256);
+            cylinder(lead_pipe_length_in_mm - 10, outer_pipe_outer_diameter / 2,
+                     outer_pipe_outer_diameter / 2, $fn = 256);
             straight_tube(lead_pipe_length_in_mm - 10, 1.0,
-                          mm_to_inches(inner_diameter));
+                          mm_to_inches(outer_pipe_inner_diameter));
             translate([-4, outer_tube_radius - 3, 0]) cube([3, 11, 8]);
             translate([1, outer_tube_radius - 3, 0]) cube([3, 11, 8]);
+            rotate([0, 0, 15]) {
+              difference() {
+                translate([offset, -8, 26]) cube([32.35 + (2 * thickness_in_mm), 4, 33]);
+                translate([offset + (2 * thickness_in_mm) + 17.35, 0, 48.9]) {
+                    rotate([90, 0, 0]) cylinder(10, 2, 2, $fn = 256);
+                }
+              }
+            }
           }
           // Screw hole.
           translate([-5, outer_tube_radius + 4.5, 4]) {
@@ -115,8 +126,9 @@ module receiver(outer_diameter_inches, taper_in_inches_per_inch, taper_length_in
           }
           // Slot for tightening the tube..
           translate([-1, outer_tube_radius - 2, -1]) cube([2, 5, 15]);
-          translate([0, 0, -1]) cylinder(lead_pipe_length_in_mm + 2, inner_diameter / 2,
-                                         inner_diameter / 2, $fn = 256);
+          translate([0, 0, -1]) cylinder(lead_pipe_length_in_mm + 2,
+                                         outer_pipe_inner_diameter / 2,
+                                         outer_pipe_inner_diameter / 2, $fn = 256);
         }
       }
     }
@@ -341,10 +353,14 @@ module valve_block(bore = 0.413, fourth_valve = true) {
     translate([spacing * 2, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
     translate([spacing * 3, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
   }
-//   translate([12, 10, 10]) cube([100, 30, 50]);
+  // Valve mount
+  difference() {
+    translate([17.5, 10, 63.35]) cube([40, 13.5, 5]);
+    translate([38, 19.275, 60]) rotate([0, 0, 90]) cylinder(30, 2, 2, $fn=256);
+  }
 }
 
-valve_parts(bore = 0.413) {
+module valve_parts(bore = 0.413) {
   translate([0, 40, 0]) piston_valve(bore, false);
   translate([40, 40, 0]) piston_valve(bore, true);
   translate([80, 40, 0]) piston_valve(bore, false);
@@ -365,7 +381,7 @@ valve_parts(bore = 0.413) {
 bell_main_segment_inner_radius = function(z) (15.57032 + (136.93058/(1 + (z/23.73906)))) / 2;
 bell_main_segment_slope = function(z) -406325468068.5 / (((50000 * z) + 1186953)^2);
 
-module bell_main_segment(bore=0.413, height = 337, thickness = 2.0) {
+module bell_main_segment(bore=0.413, start_slice = 0, stop_slice = undef, height = 337, thickness = 2.0) {
   // This function models the nonlinear curved segment of the bell (the bell flare).
   // These measurements were taken from a 1959 Olds flugelhorn that belonged to
   // my grandfather.  They are the exterior diameter of the bell.
@@ -397,9 +413,10 @@ module bell_main_segment(bore=0.413, height = 337, thickness = 2.0) {
   // bell_main_segment_radius.
     slices = height;
     sliceHeight = height/slices;
+    actual_stop_slice = (stop_slice == undef) ? slices : stop_slice;
 
-    union(){
-        for(slice = [0 : slices - 1]){
+    union() {
+        for(slice = [start_slice : actual_stop_slice - 1]){
             zOffset = sliceHeight * slice;
             nextZOffset = sliceHeight * (slice + 1);
 
@@ -458,16 +475,29 @@ module bell_main_segment(bore=0.413, height = 337, thickness = 2.0) {
                 circle(2.0, $fn = 256);
         }
     }
+    if (actual_stop_slice > 310) {
+        rotate([0, 0, 15]) {
+            translate([-2.5, -26, 260]) { 
+                difference() {
+                    // Valve mount
+                    rotate([-1.1, 0, 0]) cube([5, 11, 50]);
+                    translate([-20, 6, 25]) rotate([0, 90, 0]) cylinder(60, 2, 2, $fn=256);
+                }
+            }
+        }
+    }
 }
 
 module bell_big_curve(bore=0.413, thickness = 2.0) {
     // Length of the outside of the tube is 2 * pi * (bend_radius + radius_1).
     
+    bend_radius = 76;
+    
     // At 337mm from end of bell, interior radius is 12.29mm.  Add thickness.
     // At other end of curve, 19mm diameter, 9.5mm radius.
     bell_curved_piece(slices = 100, radius_1 = 12.29 + thickness,
-                      radius_2 = 9.5 + thickness, bend_radius = 76,
-                      thickness = thickness);
+                      radius_2 = 9.5 + thickness, bend_radius = bend_radius,
+                      thickness = thickness, enable_brace = true);                   
 }
 
 module bell_small_curve(bore=0.413, thickness = 2.0) {
@@ -488,16 +518,27 @@ module bell_small_curve(bore=0.413, thickness = 2.0) {
     
 module bell_curved_piece(bore=0.413, thickness = 2.0, radius_1 = 10,
                          radius_2 = 20, bend_radius = 40, thickness = 2,
-                         slices = 100) {
+                         slices = 100, enable_brace = false) {
+    midwidth = radius_1 - (radius_1-radius_2)/2;
     difference()
     {
-        skin([for(i=[0:slices], $fn = 256) 
-              transform(rotation([0,180/slices*i,0])*translation([-bend_radius,0,0]), 
-                        circle(radius_1-(radius_1-radius_2)/slices*i), $fn = 256)]);
+        union() {
+            skin([for(i=[0:slices], $fn = 256) 
+                  transform(rotation([0,180/slices*i,0])*translation([-bend_radius,0,0]), 
+                            circle(radius_1-(radius_1-radius_2)/slices*i), $fn = 256)]);
+            if (enable_brace) {
+                translate([-25, -5, bend_radius - midwidth - 20]) cube([30, 10, 20 + midwidth]);
+                translate([-25, -21.6, bend_radius - midwidth - 20]) cube([30, 21.6, 20 + midwidth]);   
+            }
+        }
+
         for(radius_1 = radius_1-thickness, radius_2 = radius_2-thickness) {
             skin([for(i=[0:slices], $fn = 256) 
                   transform(rotation([0,180/slices*i,0])*translation([-bend_radius,0,0]), 
                             circle(radius_1-(radius_1-radius_2)/slices*i), $fn = 256)]);
+        }
+        translate([-10, 20, bend_radius - midwidth - 10]) {
+            rotate([90, 0, 0]) cylinder(60, 2, 2, $fn = 256);
         }
     }
 }
@@ -577,7 +618,7 @@ module bell(bore=0.413, thickness = 2.0) {
 
 bell();
 translate([78.6, -19.6, 247]) rotate([0, -90, 15]) valve_block();
-translate([39.6, -29.6, 449]) rotate([0, 180, 0]) small_morse_receiver(disassembled = false);
+translate([39.6, -29.6, 449]) rotate([0, 180, -165]) small_morse_receiver(disassembled = false);
 
 
 // translate([0, 0, 21.5]) piston_valve(0.413, false);
