@@ -12,9 +12,6 @@ use <scad-utils/shapes.scad>
 // https://github.com/openscad/list-comprehension-demos
 use <list-comprehension-demos/skin.scad>
 
-// https://www.thingiverse.com/thing:6629632
-// Comment out the examples!
-use <variable_extrude/files/variable_extrude.scad>
 
 // To do list:
 //
@@ -273,11 +270,16 @@ module piston_valve_cap(valve_thread_pitch = 2, top_thickness = 2.0, valve_gap_e
     };
 }
 
-module straight_tube(length, thickness = 1, bore=0.413) {
-  mmbore = inches_to_mm(bore);
+module straight_tube(length, thickness = 2.0, bore=0.413) {
+  sloped_tube(length, thickness, bore, bore);
+}
+
+module sloped_tube(length, thickness = 2.0, bore_1=0.413, bore_2=0.413) {
+  mmbore_1 = inches_to_mm(bore_1);
+  mmbore_2 = inches_to_mm(bore_2);
   difference() {
-    cylinder(length, (mmbore / 2) + thickness, (mmbore / 2) + thickness, $fn=256);
-    translate([0, 0, -1]) cylinder(length + 2, mmbore / 2, mmbore / 2, $fn=256);
+    cylinder(length, (mmbore_1 / 2) + thickness, (mmbore_2 / 2) + thickness, $fn=256);
+    translate([0, 0, -1]) cylinder(length + 2, mmbore_1 / 2, mmbore_2 / 2, $fn=256);
   };
 }
 
@@ -340,11 +342,13 @@ module valve_block(bore = 0.413, fourth_valve = true) {
     translate([spacing * 3, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
   }
 //   translate([12, 10, 10]) cube([100, 30, 50]);
+}
 
-  translate([0, 40, 0]) piston_valve(0.413, false);
-  translate([40, 40, 0]) piston_valve(0.413, true);
-  translate([80, 40, 0]) piston_valve(0.413, false);
-  translate([120, 40, 0]) piston_valve(0.413, true);
+valve_parts(bore = 0.413) {
+  translate([0, 40, 0]) piston_valve(bore, false);
+  translate([40, 40, 0]) piston_valve(bore, true);
+  translate([80, 40, 0]) piston_valve(bore, false);
+  translate([120, 40, 0]) piston_valve(bore, true);
   
   translate([0, -40, 0]) piston_valve_cap();
   translate([40, -40, 0]) piston_valve_cap();
@@ -358,16 +362,40 @@ module valve_block(bore = 0.413, fourth_valve = true) {
 }
 
 
-bell_main_segment_inner_diameter = function(z) 15.57032 + (136.93058/(1 + (z/23.73906)));
-bell_main_segment_slope = function(z) -8126508136137 / ((50000 * z) + 1186953)^2;
+bell_main_segment_inner_radius = function(z) (15.57032 + (136.93058/(1 + (z/23.73906)))) / 2;
+bell_main_segment_slope = function(z) -406325468068.5 / (((50000 * z) + 1186953)^2);
 
-// bell_main_segment_inner_diameter_size_function =
-//     function(z) bell_main_segment_inner_diameter(337 * z);
-// bell_main_segment_average_diameter_size_function =
-//     function(z) bell_main_segment_inner_diameter_size_function(z) + 1.0;
-
-module bell_extrude(height, thickness = 2.0) {
-    slices = height * 4;
+module bell_main_segment(bore=0.413, height = 337, thickness = 2.0) {
+  // This function models the nonlinear curved segment of the bell (the bell flare).
+  // These measurements were taken from a 1959 Olds flugelhorn that belonged to
+  // my grandfather.  They are the exterior diameter of the bell.
+  //
+  // Distance from end of bell : diameter
+  //
+  // 0 : 153mm (at end)
+  // 3 : 153mm (because of curled lip; otherwise would be smaller)
+  // 26 : 82
+  // 76 : 54
+  // 126 : 44
+  // 204 : 36
+  //
+  // The main part of the bell's diameter is modeled as:
+  //
+  // y = 16.07032 + (153.0009 − 16.07032)/(1 + (x/23.73906)
+  //
+  // where x is the distance from the end of the bell and y is the diameter.
+  //
+  // This curve fits the dimensions of the ouside of the bell up to the point
+  // where it starts curving.  The slope of the exterior of the tube is linear
+  // after that.
+  //
+  // After subtracting 0.5mm from all diameters, the curve becomes:
+  //
+  // y = 15.57032 + (152.5009 − 15.57032)/(1 + (x/23.73906)  
+  //
+  // This equation is returned (after dividing by two) by the function
+  // bell_main_segment_radius.
+    slices = height;
     sliceHeight = height/slices;
 
     union(){
@@ -377,97 +405,131 @@ module bell_extrude(height, thickness = 2.0) {
 
             translate([0, 0, zOffset]) {
                 difference() {
+                    // This is what this code is effectively doing:
+                    //
+                    //     baseSlope = bell_main_segment_slope(zOffset);
+                    //     bottomSlopeDegrees = 90 + (atan(baseSlope));
+                    //     oppositeOverHypotenuseAtBottom = sin(bottomSlopeDegrees);
+                    //
+                    // The opposite is the thickness of the bell (e.g. 2mm).
+                    // This is a fixed constant.
+                    //
+                    // The hypotenuse is the difference between the inner wall
+                    // and the outer wall at that height.  At points where the
+                    // bell is almost horizontal, this is much wider than the
+                    // thickness, because you're measuring through the bell
+                    // at a steep angle.
+                    //
+                    // What we need from there is the denominator of this fraction, so
+                    // flip the fraction, then multiply by the desired thickness value.
+                    //
+                    //     hypotenuseOverOppositeAtBottom = 1/oppositeOverHypotenuseAtBottom;
+                    //     widthAtBottom = hypotenuseOverOppositeAtBottom * thickness;
+                    //
+                    // We can simplify this computation further:
+                    //
+                    //     hypotenuseOverOppositeAtBottom = 1/sin(90 + atan(baseSlope));
+                    //     hypotenuseOverOppositeAtBottom = secant(90 + atan(baseSlope));
+                    //     hypotenuseOverOppositeAtBottom = cosecant(atan(baseSlope));
+                    //     hypotenuseOverOppositeAtBottom = sqrt((baseSlope ^2) + 1);
                     baseSlope = bell_main_segment_slope(zOffset);
-                    
-                    // Old code
-                    // bottomSlopeDegrees = 90 + (atan(baseSlope));
-                    // oppositeOverHypotenuseAtBottom = sin(bottomSlopeDegrees);  // = thickness / length
-                    // hypotenuseOverOppositeAtBottom = 1/oppositeOverHypotenuseAtBottom;
-                    // widthAtBottom = hypotenuseOverOppositeAtBottom * thickness;
-                    widthAtBottom = sqrt((baseSlope ^2) + 1);
-                    
-                    topSlope = bell_main_segment_slope(nextZOffset);
+                    widthAtBottom = sqrt((baseSlope ^2) + 1) * thickness;
+
+                    // This math is identical to the above, but computed at the top of the cylinder.
+                    //
                     // topSlopeDegrees = 90 + (atan(topSlope));
                     // oppositeOverHypotenuseAtTop = sin(topSlopeDegrees);  // = thickness / length
                     // hypotenuseOverOppositeAtTop = 1/oppositeOverHypotenuseAtTop;
                     // widthAtTop = hypotenuseOverOppositeAtTop * thickness;
-                    widthAtTop = sqrt((topSlope ^2) + 1);
+                    topSlope = bell_main_segment_slope(nextZOffset);
+                    widthAtTop = sqrt((topSlope ^2) + 1) * thickness;
                     
-                    cylinder(sliceHeight, bell_main_segment_inner_diameter(zOffset) + widthAtBottom,
-                             bell_main_segment_inner_diameter(nextZOffset) + widthAtTop, $fn = 256);
-                    cylinder(sliceHeight, bell_main_segment_inner_diameter(zOffset),
-                             bell_main_segment_inner_diameter(nextZOffset), $fn = 256);
+                    cylinder(sliceHeight, bell_main_segment_inner_radius(zOffset) + widthAtBottom,
+                             bell_main_segment_inner_radius(nextZOffset) + widthAtTop, $fn = 256);
+                    cylinder(sliceHeight, bell_main_segment_inner_radius(zOffset),
+                             bell_main_segment_inner_radius(nextZOffset), $fn = 256);
                 }
             }
         }
     }
-    rotate_extrude() {
-        translate([bell_main_segment_inner_diameter(0) + (thickness / 2.0), 0, 2.0]) circle(2.0);
+    translate([0, 0, 2.0]) {
+        rotate_extrude($fn = 256) {
+            translate([bell_main_segment_inner_radius(0) + (thickness / 2.0), 0, 0])
+                circle(2.0, $fn = 256);
+        }
     }
 }
 
-module bell_main_segment(bore=0.413) {
-// Bell curve is modeled as:
-//
-// y = 15.57032 + (152.5009 − 15.57032)/(1 + (x/23.73906))
-//
-// up to the point where it starts curving, and is linear after that.
-//
-// This bit models this nonlinear curved segment (the bell flare).
-// The data was taken from a 1959 Olds flugelhorn that belonged to
-// my grandfather.
-
-// This equation is returned by the function bell_main_segment_diameter.
-
-// This needs to be converted into a set of values in the range 0..1,
-// where 0 == 0 and 1 == the length of the bell segment (337).
-//
-// This is bell_main_segment_diameter_size_function.
-//
-// The circle has a radius of 0.5 to compensate for the function returning
-// the diameter rather than the radius.
-
-//  translate([0, 0, 0])
-//      variable_extrude(height=200, scale=bell_main_segment_inner_diameter_size_function,
-//                       slices=300, $fn=1000) circle(r=0.5);
-
-  bell_extrude(337);
-
-//scaling the examples
-//upscale=1;
-
-//Hour Glass shape with circle and test_function_1
-//translate([-15*upscale,0])scale([upscale,upscale,upscale])
-//	variable_extrude(height=20, scale=bell_main_segment_diameter, slices=10,$fn=300)
-//		circle(r=1);
-        
-        //scaling the examples
-// Goes through a period of 0.1 / 6 in 20 height.
-
-
+module bell_big_curve(bore=0.413, thickness = 2.0) {
+    // Length of the outside of the tube is 2 * pi * (bend_radius + radius_1).
+    
+    // At 337mm from end of bell, interior radius is 12.29mm.  Add thickness.
+    // At other end of curve, 19mm diameter, 9.5mm radius.
+    bell_curved_piece(slices = 100, radius_1 = 12.29 + thickness,
+                      radius_2 = 9.5 + thickness, bend_radius = 76,
+                      thickness = thickness);
 }
 
+module bell_small_curve(bore=0.413, thickness = 2.0) {
+    // Length of the outside of the tube is 2 * pi * (bend_radius + radius_1).
+    
+    // At opposite ends, 17mm and 14mm approximate inner diameter,
+    // 8.5mm and 7mm inner radius.
+    //
+    // Original instrument is 130mm between the outer sides of the tubes,
+    // and 102mm between the inner sides of the tubes, as measured near the
+    // bell end, so the diameter of the bend is halfway between, or 116mm.
+    // The radius is therefore about 58mm.
 
-module bell(bore=0.413) {
+    bell_curved_piece(slices = 100, radius_1 = 8.5 + thickness,
+                      radius_2 = 7 + thickness, bend_radius = 58,
+                      thickness = thickness);
+}
+    
+module bell_curved_piece(bore=0.413, thickness = 2.0, radius_1 = 10,
+                         radius_2 = 20, bend_radius = 40, thickness = 2,
+                         slices = 100) {
+    difference()
+    {
+        skin([for(i=[0:slices], $fn = 256) 
+              transform(rotation([0,180/slices*i,0])*translation([-bend_radius,0,0]), 
+                        circle(radius_1-(radius_1-radius_2)/slices*i), $fn = 256)]);
+        for(radius_1 = radius_1-thickness, radius_2 = radius_2-thickness) {
+            skin([for(i=[0:slices], $fn = 256) 
+                  transform(rotation([0,180/slices*i,0])*translation([-bend_radius,0,0]), 
+                            circle(radius_1-(radius_1-radius_2)/slices*i), $fn = 256)]);
+        }
+    }
+}
 
-// Bell measurements
-// distance from end : diameter
-// 0 : 153mm (at end)
-// 3 : 153mm (because of curled lip; otherwise would be smaller)
-// 26 : 82
-// 76 : 54
-// 126 : 44
-// 204 : 36
+module bell(bore=0.413, thickness = 2.0) {
+    bell_length = 337;
+    bell_main_segment(bore = bore, height = bell_length, thickness = thickness);
+    translate([76, 0, bell_length]) bell_big_curve(bore = bore, thickness = thickness);
+    
+    id_2 = 19;
+    id_2_inches = mm_to_inches(id_2);
+    id_1 = 17;
+    id_1_inches = mm_to_inches(id_1);
+    
+    translate([152, 0, 121]) sloped_tube(216, thickness = 2, bore_1 = id_1_inches,
+                                         bore_2 = id_2_inches);
+    translate([96.00, -15, 121]) rotate([0, 180, 15]) bell_small_curve(bore = bore, thickness = thickness);
+    // Top is at 430 or so.  Bottom should be about 54.  This block lets us measure.
+    // translate([100, -5, 44]) cube([10, 10, 10]);
+    
+    id_3 = 14;
+    id_3_inches = mm_to_inches(id_3);
+    id_4 = 12;
+    id_4_inches = mm_to_inches(id_4);
+    
+    translate([40, -30, 121]) sloped_tube(115, thickness = 2, bore_1 = id_3_inches,
+                                         bore_2 = id_4_inches); 
 
-// Bell segment curve is y = 16.07032 + (153.0009 − 16.07032)/(1 + (x/23.73906)
-// where x is the distance from the end of the bell and y is the diameter.
-//
-// After subtracting 0.5mm from all diameters, curve is:
-//
-// y = 15.57032 + (152.5009 − 15.57032)/(1 + (x/23.73906)
 
-bell_main_segment(bore = bore);
-
+    
+// 400mm end of bell to outer edge of first curve.
+// 372mm end of curve to end of curve (outer).
 
 // 376 mm straight in is inside edge of curve.
 // First curved part is ~172mm from outside at top to outside at bottom where it starts to curve.
@@ -480,38 +542,20 @@ bell_main_segment(bore = bore);
 // so I will model both curves and all straight pipes other than the bell segment linearly,
 // beginning from the start of the first (big) curve all the way back to the valves.
 //
-// Second pipe segment (after first curve) at 290mm from end of the bell: 19mm.
+// Second pipe segment (after first curve) at 290mm from end of the bell: 19mm in diameter.
 // Midpoint of second curve is 22mm from end of bell (outside) or 46mm (inside).
 // Midpoint of second curve is 15mm in diameter.
+// 14mm at small side.
+// 17mm at large side.
 // A valves, 12mm in diameter.
 
 // Scale all values accordingly, because metal is thin (0.008 inches, 0.2 mm).  In fact,
 // just subtract half a mm from every dimension and call that the bore.  :-)
 
-if (0) {
-fn=32;
-$fn=60;
 
-r1 = 25;
-r2 = 10;
-R = 40;
-th = 2;
-
-    difference()
-    {
-        skin([for(i=[0:fn]) 
-              transform(rotation([0,180/fn*i,0])*translation([-R,0,0]), 
-                        circle(r1+(r1-r2)/fn*i))]);
-        for(r1 = r1-th, r2 = r2-th) {
-            skin([for(i=[0:fn]) 
-                  transform(rotation([0,180/fn*i,0])*translation([-R,0,0]), 
-                            circle(r1+(r1-r2)/fn*i))]);
-        }
-    }
-}
 }
 
-// valve_block();
+// valve_parts();
 
 //  translate([0, 40, 0]) piston_valve(0.413, false);
 //  translate([40, 40, 0]) piston_valve(0.413, true);
@@ -532,6 +576,9 @@ th = 2;
 // piston_valve_cap();
 
 bell();
+translate([78.6, -19.6, 247]) rotate([0, -90, 15]) valve_block();
+translate([39.6, -29.6, 449]) rotate([0, 180, 0]) small_morse_receiver(disassembled = false);
+
 
 // translate([0, 0, 21.5]) piston_valve(0.413, false);
 
