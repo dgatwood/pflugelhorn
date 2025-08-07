@@ -51,7 +51,7 @@ use <list-comprehension-demos/skin.scad>
 // 5 == Tuning slides.
 // 6 == Mouthpiece receiver.
 // 7 == Valve measurement casing (for aid in knowning whether to sanding curved part of valves or just flat side)
-global_build_group = 7;
+global_build_group = 0;
 high_quality = true;
 
 casing_height = 101.5;  // Do not modify.
