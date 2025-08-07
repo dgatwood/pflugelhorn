@@ -15,8 +15,7 @@ use <list-comprehension-demos/skin.scad>
 
 // To do list:
 //
-// Fix spit valve position
-// Redo fourth valve tubing
+// Split main part of the bell somehow to get it below 350mm.
 
 
 /*
@@ -25,9 +24,12 @@ use <list-comprehension-demos/skin.scad>
  * sizes are traditionally measured.
  */
  
-global_in_place = true;
+global_build_group = 0;
 high_quality = false;
- 
+
+casing_height = 101.5;  // Do not modify.
+global_in_place = (global_build_group == 0);  // Do not modify.
+
 function inches_to_mm(inches) = inches * 25.4;
 function mm_to_inches(mm) = mm / 25.4;
 function MAX(a, b) = ((a < b) ? b : a);
@@ -245,7 +247,6 @@ module piston_valve(bore=0.413, even=true, valve_gap_expansion = 0.1) {
 }
 
 module piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2) {
-    casing_height = 101.5;
     even = (number % 2) == 0;
 
     rotate([0, 0, -45]) {
@@ -257,7 +258,7 @@ module piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2) {
                         union() {
                             translate([0, 0, 0]) cylinder(casing_height, 13, 13, $fn=256);
                             rotate([0, 0, 45]) {
-                                if (global_in_place) {
+                                if (global_in_place || true) {
                                   if (number == 1) {
                                     first_valve_tubing();
                                   } else if (number == 2) {
@@ -676,10 +677,10 @@ module fourth_valve_slide(bore = 0.413, thickness = 2) {
   }
   
   translate([10, 0, -10]) rotate([0, 90, 0]) {
-    straight_tube(81.1, bore = bore);
+    straight_tube(80.1, bore = bore);
   }
 
-  translate([91.1, 0, 0]) rotate([0, 90, 0]) {
+  translate([90.1, 0, 0]) rotate([0, 90, 0]) {
       curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
                   radius_2 = mmbore / 2 + thickness, bend_radius = 10,
                   thickness = thickness, start_degrees = 90,
@@ -742,22 +743,25 @@ module valve_parts(bore = 0.413) {
   translate([80, 40, 0]) piston_valve(bore, false);
   translate([120, 40, 0]) piston_valve(bore, true);
   
-  translate([0, -40, 0]) piston_valve_cap();
-  translate([40, -40, 0]) piston_valve_cap();
-  translate([80, -40, 0]) piston_valve_cap();
-  translate([120, -40, 0]) piston_valve_cap();
+  translate([0, -60, 0]) piston_valve_cap();
+  translate([40, -60, 0]) piston_valve_cap();
+  translate([80, -60, 0]) piston_valve_cap();
+  translate([120, -60, 0]) piston_valve_cap();
 
-  translate([0, -80, 0]) piston_valve_cap();
-  translate([40, -80, 0]) piston_valve_cap();
-  translate([80, -80, 0]) piston_valve_cap();
-  translate([120, -80, 0]) piston_valve_cap();
+  translate([0, -100, 0]) piston_valve_cap();
+  translate([40, -100, 0]) piston_valve_cap();
+  translate([80, -100, 0]) piston_valve_cap();
+  translate([120, -100, 0]) piston_valve_cap();
 }
 
 
 bell_main_segment_inner_radius = function(z) (15.57032 + (136.93058/(1 + (z/23.73906)))) / 2;
 bell_main_segment_slope = function(z) -406325468068.5 / (((50000 * z) + 1186953)^2);
 
-module bell_main_segment(bore=0.413, start_slice = 0, stop_slice = undef, height = 337, thickness = 2.0, coupler_mode = false) {
+module bell_main_segment(bore=0.413, start_slice = 0, stop_slice = undef, height = 337,
+                         thickness = 2.0, coupler_mode = false,
+                         emit_first_part = true, emit_second_part = true,
+                         emit_coupler = true) {
   // This function models the nonlinear curved segment of the bell (the bell flare).
   // These measurements were taken from a 1959 Olds flugelhorn that belonged to
   // my grandfather.  They are the exterior diameter of the bell.
@@ -1003,18 +1007,48 @@ module bell_long_straight_pipe(bore=0.413, thickness = 2.0, coupler_mode = false
 module bell(bore=0.413, thickness = 2.0) {
     bell_length = 337;
     
-    bell_main_segment(bore = bore, height = bell_length, thickness = thickness);
+    bell_main_segment(bore = bore, height = bell_length, thickness = thickness,
+                      emit_first_part = true, emit_second_part = global_in_place,
+                      emit_coupler = global_in_place);
+    if (!global_in_place) {
+      translate([0, 0, 0]) {
+        bell_main_segment(bore = bore, height = bell_length, thickness = thickness,
+                          emit_first_part = false, emit_second_part = true,
+                          emit_coupler = true);
+      }
+    }
 
     // Big curve with couplers
-    bell_big_curve_with_couplers(bore = bore, thickness = thickness, bell_length = bell_length);
+    translate([global_in_place ? 0 : -80,
+               global_in_place ? 0 : 100,
+               global_in_place ? 0 : 10 - bell_length]) {
+        bell_big_curve_with_couplers(bore = bore, thickness = thickness, bell_length = bell_length);
+    }
     
-    bell_long_straight_pipe(bore = bore, thickness = thickness);
+    translate([global_in_place ? 0 : -52,
+               global_in_place ? 0 : 70,
+               global_in_place ? 0 : -121]) {
+      bell_long_straight_pipe(bore = bore, thickness = thickness);
+    }
 
     mmbore = inches_to_mm(bore);                                         
 
-    bell_small_curve_with_couplers(bore = bore, thickness = thickness, bell_length = bell_length);
+    if (global_in_place) {
+      bell_small_curve_with_couplers(bore = bore, thickness = thickness,
+                                     bell_length = bell_length);
+    } else {
+      translate([0, -100, 0]) rotate([0, 0, 30]) translate([0, 0, 10])
+        rotate([0, -180, -15]) translate([-99.85, 14, -121])
+          bell_small_curve_with_couplers(bore = bore, thickness = thickness,
+                                         bell_length = bell_length);
 
-    bell_short_straight_pipe(bore = bore, thickness = thickness);
+    }
+
+    translate([global_in_place ? 0 : -152,
+               global_in_place ? 0 : 80,
+               global_in_place ? 0 : -121]) {
+      bell_short_straight_pipe(bore = bore, thickness = thickness);
+    }
         
 // 400mm end of bell to outer edge of first curve.
 // 372mm end of curve to end of curve (outer).
@@ -1125,15 +1159,34 @@ module spit_valve(enable_flap = true, enable_mount = true) {
 
 // piston_valve_cap();
 
-// Build instrument in place
-if (global_in_place) {
+
+if (global_build_group == 0) {
+    // Build instrument in place
     bell();
     translate([86.3, -17.6, 323.5]) rotate([0, -90, 15]) rotate([0, 0, 180]) valve_block();
     translate([47.3, -27.6, 449]) rotate([0, 180, -165]) small_morse_receiver(disassembled = false);
-} else {
-    valve_block();
-    // valve_parts();
-    // piston_valve_cap();
+} else if (global_build_group == 1) {
+    // Group 1: Valves, valve caps, and valve casing.
+    translate([100, 0, casing_height]) rotate([0, 180, 0]) valve_block();
+    valve_parts();
+
+} else if (global_build_group == 2) {
+    // Group 2: Bell parts.
+    bell();
+} else if (global_build_group == 3) {
+    // Output the spit valve lever.  This is a small part that requires somewhat
+    // intricate support, and probably has to use dissolvable support as a result,
+    // so output it as its own file.
+    translate([0, 45, 8]) rotate([90, 0, 0]) spit_valve(enable_mount = false, enable_flap = true);
+} else if (global_build_group == 4) {
+    // Tuning slides and receiver - use ONLY *external* support (manual paint) or dissolvable
+    // supports (or both).
+    small_morse_receiver(disassembled = true);
+
+    translate([50, 0, 20]) rotate([180, 0, 0]) first_valve_slide();
+    translate([-50, 0, 20]) rotate([180, 0, 0]) second_valve_slide();
+    translate([-50, 50, 78]) rotate([180, 0, 0]) third_valve_slide();    
+    translate([-50, -50, 107]) rotate([180, 0, 0]) fourth_valve_slide();
 }
 
 // translate([0, 0, 21.5]) piston_valve(0.413, false);
