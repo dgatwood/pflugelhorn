@@ -14,3 +14,6 @@ makes a trivial use of Chris Spencer's gears.scad library for the ribbing around
 If you wish to use this under the less restrictive BSD license, you must replace the spur_gear call
 from Gears library with some alternative or rip it out.
 
+Note that this is NOT quite playable yet even after printing the parts and doing all of
+the required valve sanding.  It is getting close, but there's still too much leakage.
+
