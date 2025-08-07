@@ -15,15 +15,11 @@ use <list-comprehension-demos/skin.scad>
 
 // To do list:
 //
-// Add wall in valve
-// Add threads for outside of valve casing
-// Make caps for top and bottom (identical, with identical holes)
-// Make valve tuning slides
-// Make tubes between valves
-// Make main tubing
-// Make main tuning slide
-// Make bell
-// Make structural supports
+// Fix valve mount position
+// Fix tuning slide mount position
+// Fix spit valve position
+// Redo fourth valve tubing
+
 
 /*
  * Note that unless otherwise noted, all dimensions are in mm except for
@@ -682,16 +678,15 @@ module valve_block(bore = 0.413, fourth_valve = true) {
       translate([9 + (spacing), 0, 40]) rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
       translate([9 + (spacing * 2), 0, 56])
           rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
+      // Valve mount
+      translate([17.5, -23, 63.35]) cube([40, 23.5, 5]);
     }
     translate([0, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
     translate([spacing, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
     translate([spacing * 2, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
     translate([spacing * 3, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
-  }
-  // Valve mount
-  difference() {
-    translate([17.5, 10, 63.35]) cube([40, 13.5, 5]);
-    translate([38, 19.275, 60]) rotate([0, 0, 90]) cylinder(30, 2, 2, $fn=256);
+    // Valve mount hole
+    translate([38.5, -19.275, 60]) rotate([0, 0, 90]) cylinder(30, 2, 2, $fn=256);
   }
 }
 
@@ -849,7 +844,7 @@ module bell_small_curve(bore=0.413, thickness = 2.0) {
     difference() {
       union() {
         curved_tube(slices = 100, radius_1 = 8.5 + thickness,
-                    radius_2 = 7 + thickness, bend_radius = 58,
+                    radius_2 = 7 + thickness, bend_radius = 54,
                     thickness = thickness);
         // Spit valve hole rim
         translate([-63, 0, 23.5]) rotate([180, 105, 0]) cylinder(3.5, 2.75, 2.75, $fn = 256);
@@ -909,7 +904,7 @@ module bell(bore=0.413, thickness = 2.0) {
     translate([152, 0, 121]) sloped_tube(216, thickness = 2, bore_1 = id_1_inches,
                                          bore_2 = id_2_inches);
                                          
-    translate([96.00, -15, 121]) rotate([0, 180, 15]) bell_small_curve(bore = bore, thickness = thickness);
+    translate([99.85, -14, 121]) rotate([0, 180, 15]) bell_small_curve(bore = bore, thickness = thickness);
 
     // Top is at 430 or so.  Bottom should be about 54.  This block lets us measure.
     // translate([100, -5, 44]) cube([10, 10, 10]);
@@ -919,7 +914,7 @@ module bell(bore=0.413, thickness = 2.0) {
     id_4 = 12;
     id_4_inches = mm_to_inches(id_4);
     
-    translate([40, -30, 121]) sloped_tube(115, thickness = 2, bore_1 = id_3_inches,
+    translate([47.7, -28, 121]) sloped_tube(115, thickness = 2, bore_1 = id_3_inches,
                                          bore_2 = id_4_inches); 
 
 
@@ -1025,8 +1020,8 @@ module spit_valve(enable_flap = true, enable_mount = true) {
 // Build instrument in place
 if (true) {
     bell();
-    translate([78.6, -19.6, 323.5]) rotate([0, -90, 15]) rotate([0, 0, 180]) valve_block();
-    translate([39.6, -29.6, 449]) rotate([0, 180, -165]) small_morse_receiver(disassembled = false);
+    translate([86.3, -17.6, 323.5]) rotate([0, -90, 15]) rotate([0, 0, 180]) valve_block();
+    translate([47.3, -27.6, 449]) rotate([0, 180, -165]) small_morse_receiver(disassembled = false);
 } else {
     valve_block();
     // valve_parts();
