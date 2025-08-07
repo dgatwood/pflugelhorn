@@ -359,9 +359,52 @@ module valve_block(bore = 0.413, fourth_valve = true) {
 
 
 bell_main_segment_inner_diameter = function(z) 15.57032 + (136.93058/(1 + (z/23.73906)));
-bell_main_segment_inner_diameter_size_function = function(z) bell_main_segment_inner_diameter(337 * z);
-bell_main_segment_outer_diameter_size_function =
-    function(z) bell_main_segment_inner_diameter_size_function(z) + 2.0;
+bell_main_segment_slope = function(z) -8126508136137 / ((50000 * z) + 1186953)^2;
+
+// bell_main_segment_inner_diameter_size_function =
+//     function(z) bell_main_segment_inner_diameter(337 * z);
+// bell_main_segment_average_diameter_size_function =
+//     function(z) bell_main_segment_inner_diameter_size_function(z) + 1.0;
+
+module bell_extrude(height, thickness = 2.0) {
+    slices = height * 4;
+    sliceHeight = height/slices;
+
+    union(){
+        for(slice = [0 : slices - 1]){
+            zOffset = sliceHeight * slice;
+            nextZOffset = sliceHeight * (slice + 1);
+
+            translate([0, 0, zOffset]) {
+                difference() {
+                    baseSlope = bell_main_segment_slope(zOffset);
+                    
+                    // Old code
+                    // bottomSlopeDegrees = 90 + (atan(baseSlope));
+                    // oppositeOverHypotenuseAtBottom = sin(bottomSlopeDegrees);  // = thickness / length
+                    // hypotenuseOverOppositeAtBottom = 1/oppositeOverHypotenuseAtBottom;
+                    // widthAtBottom = hypotenuseOverOppositeAtBottom * thickness;
+                    widthAtBottom = sqrt((baseSlope ^2) + 1);
+                    
+                    topSlope = bell_main_segment_slope(nextZOffset);
+                    // topSlopeDegrees = 90 + (atan(topSlope));
+                    // oppositeOverHypotenuseAtTop = sin(topSlopeDegrees);  // = thickness / length
+                    // hypotenuseOverOppositeAtTop = 1/oppositeOverHypotenuseAtTop;
+                    // widthAtTop = hypotenuseOverOppositeAtTop * thickness;
+                    widthAtTop = sqrt((topSlope ^2) + 1);
+                    
+                    cylinder(sliceHeight, bell_main_segment_inner_diameter(zOffset) + widthAtBottom,
+                             bell_main_segment_inner_diameter(nextZOffset) + widthAtTop, $fn = 256);
+                    cylinder(sliceHeight, bell_main_segment_inner_diameter(zOffset),
+                             bell_main_segment_inner_diameter(nextZOffset), $fn = 256);
+                }
+            }
+        }
+    }
+    rotate_extrude() {
+        translate([bell_main_segment_inner_diameter(0) + (thickness / 2.0), 0, 2.0]) circle(2.0);
+    }
+}
 
 module bell_main_segment(bore=0.413) {
 // Bell curve is modeled as:
@@ -384,14 +427,12 @@ module bell_main_segment(bore=0.413) {
 // The circle has a radius of 0.5 to compensate for the function returning
 // the diameter rather than the radius.
 
-  difference() {
-    translate([0, 0, 0])
-        variable_extrude(height=200, scale=bell_main_segment_outer_diameter_size_function,
-                         slices=300, $fn=1000) circle(r=0.5);
-    translate([0, 0, 0])
-        variable_extrude(height=200, scale=bell_main_segment_inner_diameter_size_function,
-                         slices=300, $fn=1000) circle(r=0.5);
-  }
+//  translate([0, 0, 0])
+//      variable_extrude(height=200, scale=bell_main_segment_inner_diameter_size_function,
+//                       slices=300, $fn=1000) circle(r=0.5);
+
+  bell_extrude(337);
+
 //scaling the examples
 //upscale=1;
 
