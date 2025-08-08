@@ -51,7 +51,7 @@ use <list-comprehension-demos/skin.scad>
 // 5 == Tuning slides.
 // 6 == Mouthpiece receiver.
 // 7 == Valve measurement casing (for aid in knowning whether to sanding curved part of valves or just flat side)
-global_build_group = 1;
+global_build_group = 8;
 high_quality = false;
 
 casing_height = 101.5;  // Do not modify.
@@ -84,6 +84,8 @@ function MIN(a, b) = ((a < b) ? a : b);
  * @param nubs                      True to include nubs on the outside for easier
  *                                  tuning (if the lead pipe is used for tuning).
  */
+ // Small: 0.395, 0.05, 1.1
+ // Large: 0.4350, 0.05, 1.1
 module receiver(outer_diameter_inches, taper_in_inches_per_inch, taper_length_in_inches,
                 lead_pipe_length_in_mm = 114, slide_gap_expansion = 0.1,
                 outer_thickness_expansion = 0.25,
@@ -189,9 +191,13 @@ module receiver_coupler(outer_diameter_inches, slide_gap_expansion = 0.2, thickn
   straight_tube(30, bore = mm_to_inches(coupler_inner_diameter), thickness = 3.0);
 }
 
-/* A receiver for a standard large morse taper (cornet-style) flugelhorn mouthpiece. */
+/**
+ * A receiver for a standard large morse taper (trumpet-style) flugelhorn mouthpiece.
+ * Both tubes are reduced by half the bore difference so that the outer diameter is
+ * approximately the same.
+ */
 module large_morse_receiver(lead_pipe_length_in_mm = 114, slide_gap_expansion = 0.05,
-                bore = 0.413, thickness_in_mm = 2.4, nubs = true, tuning = true,
+                bore = 0.413, thickness_in_mm = (2.4 - 0.508), nubs = true, tuning = true,
                 disassembled = false) {
   receiver(0.4350, 0.05, 1.1, lead_pipe_length_in_mm = lead_pipe_length_in_mm,
            slide_gap_expansion = slide_gap_expansion, bore = bore,
