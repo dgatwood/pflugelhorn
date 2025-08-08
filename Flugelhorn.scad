@@ -480,7 +480,7 @@ module first_valve_tubing(bore = 0.413, thickness = 2) {
                     end_degrees = 45, reversed = true);
     }
 
-    translate([0.1 /* @@@ WAS 0 */, -16.0, 0]) straight_tube(3, bore=bore);
+    translate([0.1, -16.0, 0]) straight_tube(3, bore=bore);
   }
 }
 
@@ -720,7 +720,6 @@ module fourth_valve_tubing(bore = 0.413, thickness = 2) {
                          outer_only = true, shift = 0);
     }
 
-     // @@@  Adding 15.9 extra length
     translate([99.9, -25.9, 11.5]) rotate([-90, 0, 0]) {
       straight_tube(15.9, bore = bore);
     }
@@ -1032,7 +1031,6 @@ module bell_small_curve(bore=0.413, thickness = 2.0, coupler_mode = 0) {
         translate([-59, 0, 23.5]) rotate([180, 111, 0]) translate([0, 0, -2]) cylinder(20, 1.5, 1.5, $fn = 256);
       }
     }
-    // translate([-62, -1, 23.5]) rotate([180, 105, 7.5]) cylinder(20, 1.5, 1.5, $fn = 256);
 
     if (!coupler_mode) {
       translate([-65.2, 0, 15]) rotate([0, -16, 180]) translate([-3, 0, 0]) {
@@ -1187,11 +1185,6 @@ module bell_short_straight_pipe(bore=0.413, thickness = 2.0, coupler_mode = fals
                                          bore_2 = id_4_inches);
 }
 
-//  translate([0, 40, 0]) piston_valve(0.413, false);
-//  translate([40, 40, 0]) piston_valve(0.413, true);
-//  translate([80, 40, 0]) piston_valve(0.413, false);
-//  translate([120, 40, 0]) piston_valve(0.413, true);
-
 // First valve slide: Out 22mm at 20 degrees, curve down.  53mm from top of top hole to
 //                    tuning slide joint (21mm usable).  15mm interior.  10mm overlap.
 //                    12mm from overlap to middle of curve.  20mm between outside of one
@@ -1209,12 +1202,10 @@ module spit_valve(enable_flap = true, enable_mount = true) {
 
   if (enable_flap) {
     translate([1, 0, 10]) rotate([0, 90, 0]) {
-//      cube([30, 30, 30]);
       difference() {
         cylinder(4.5, 5, 5, $fn = 256);
         cylinder(3.5, 4.5, 4.5, $fn = 256);
       }
-      // translate([-100, 0, 4]) translate([0, 4, 0]) cube([100, 8, 4]);
       difference() {
         translate([0, 0, -96]) rotate([90, -90, 0]) translate([0, 0, -2]) rotate_extrude(angle = 45, $fn = 256) {
           translate([100, 0, 0]) square([6, 4]);
@@ -1249,22 +1240,13 @@ module spit_valve(enable_flap = true, enable_mount = true) {
             cube([11.5, 10, 3]);
             translate([0, 3, 0]) cube([4, 4, 6]);
             translate([-3, 3, 4]) cube([7, 4, 2]);
-
-//            translate([-2, 3.5, 1.5]) cube([7, 3, 1.5]);
-//            translate([-2.5, 3.5, 0]) cube([1.5, 3, 3]);  @@@
           }
         }
         translate([-36, 15, 1]) rotate([90, 0, 0]) cylinder(30, 1.2, 1.2, $fn = 256);
       }
     }
   }
-
-//   translate([0, -5, 0]) cube(10);
-
 }
-
-// piston_valve_cap();
-
 
 if (global_build_group == 0) {
     // Build instrument in place
@@ -1272,7 +1254,7 @@ if (global_build_group == 0) {
     translate([86.3, -17.6, 323.5]) rotate([0, -90, 15]) rotate([0, 0, 180]) valve_block();
     translate([47.3, -27.6, 449]) rotate([0, 180, -165]) small_morse_receiver(disassembled = false);
 } else if (global_build_group == 1) {
-    // Group 1: Valve casing.    difference() {
+    // Group 1: Valve casing.
     translate([100, 0, casing_height]) rotate([0, 180, 0]) valve_block();
 } else if (global_build_group == 2) {
     valve_parts(enable_caps = false);
@@ -1299,15 +1281,3 @@ if (global_build_group == 0) {
 } else if (global_build_group == 7) {
     piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2, for_measurement = true);
 }
-
-// translate([0, 0, 21.5]) piston_valve(0.413, false);
-
-// translate([0, 40, 0]) piston_valve(0.413, false);
-// piston_valve_casing(0.413, false);
-
-// translate([40, 0, 0]) piston_valve_cap();
-// translate([40, 40, 0]) piston_valve_cap();
-
-// translate([-30, -30, 0]) tuning_slide(10, 20, 10, 10, disassembled = true, shift = 0);
-
-// translate([-50, -50, 0]) small_morse_receiver(disassembled = true);
