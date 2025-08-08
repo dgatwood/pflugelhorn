@@ -1093,10 +1093,11 @@ module bell_big_curve_with_couplers(bore=0.413, thickness = 2.0, bell_length = 3
 }
 
 module bell_long_straight_pipe(bore=0.413, thickness = 2.0, coupler_mode = false) {
-    // Experimentally, 0.2 is too much gap here, so switched to 0.1.
-    id_2 = 19 + (coupler_mode ? ((2 * thickness) + 0.1) : 0);
+    // Experimentally, 0.2 is too much gap here, so switched to 0.1.  That was also
+    // way too big, so reduced to 0.02.
+    id_2 = 19 + (coupler_mode ? ((2 * thickness) + 0.02) : 0);
     id_2_inches = mm_to_inches(id_2);
-    id_1 = 17 + (coupler_mode ? ((2 * thickness) + 0.1) : 0);
+    id_1 = 17 + (coupler_mode ? ((2 * thickness) + 0.02) : 0);
     id_1_inches = mm_to_inches(id_1);
 
     translate([152, 0, 121]) sloped_tube(216, thickness = thickness, bore_1 = id_1_inches,
@@ -1176,9 +1177,9 @@ module bell(bore=0.413, thickness = 2.0) {
 }
 
 module bell_short_straight_pipe(bore=0.413, thickness = 2.0, coupler_mode = false) {
-    id_3 = 14 + (coupler_mode ? ((2 * thickness) + 0.2) : 0);
+    id_3 = 14 + (coupler_mode ? ((2 * thickness) + 0.02) : 0);
     id_3_inches = mm_to_inches(id_3);
-    id_4 = 12 + (coupler_mode ? ((2 * thickness) + 0.1) : 0);
+    id_4 = 12 + (coupler_mode ? ((2 * thickness) + 0.02) : 0);
     id_4_inches = mm_to_inches(id_4);
 
     translate([47.7, -28, 121]) sloped_tube(115, thickness = 2, bore_1 = id_3_inches,
