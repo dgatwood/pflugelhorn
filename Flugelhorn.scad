@@ -1069,18 +1069,20 @@ module curved_tube(bore=0.413, thickness = 2.0, radius_1 = 10,
             rotate([0, end_degrees, 0]) translate([-bend_radius, 0, -0.1]) cylinder(0.2, radius_2, radius_2);
         }
 
-        for(radius_1 = radius_1-thickness, radius_2 = radius_2-thickness) {
-            skin([for(i=[0:slices], $fn = 256)
-                for (should_emit = ((emit_from_slice == undef) || (i >= emit_from_slice)) &&
-                                ((emit_to_slice == undef) || (i < emit_to_slice)))
-                  transform(rotation([0, start_degrees + ((end_degrees - start_degrees) / slices * i), 0]) *
-                            translation([-bend_radius, 0, 0]),
-                            circle(radius_1 - (radius_1 - radius_2) / slices * i), $fn = 256)]);
-        }
+        inner_radius_1 = radius_1 - thickness;
+        inner_radius_2 = radius_2 - thickness;
+        skin([for(i=[0:slices], $fn = 256)
+            for (should_emit = ((emit_from_slice == undef) || (i >= emit_from_slice)) &&
+                            ((emit_to_slice == undef) || (i < emit_to_slice)))
+              transform(rotation([0, start_degrees + ((end_degrees - start_degrees) / slices * i), 0]) *
+                        translation([-bend_radius, 0, 0]),
+                        circle(inner_radius_1 - (inner_radius_1 - inner_radius_2) / slices * i), $fn = 256)]);
 
         /* Clean up the interior of the ends */
-        rotate([0, start_degrees, 0]) translate([-bend_radius, 0, -0.15]) cylinder(0.3, radius_1, radius_1);
-        rotate([0, end_degrees, 0]) translate([-bend_radius, 0, -0.15]) cylinder(0.3, radius_2, radius_2);
+        rotate([0, start_degrees, 0]) translate([-bend_radius, 0, -0.15])
+            cylinder(0.3, inner_radius_1, inner_radius_1);
+        rotate([0, end_degrees, 0]) translate([-bend_radius, 0, -0.15])
+            cylinder(0.3, inner_radius_2, inner_radius_2);
 
         if (enable_brace) {
           translate([-10, 20, bend_radius - midwidth - 10]) {
