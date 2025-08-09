@@ -51,7 +51,7 @@ use <list-comprehension-demos/skin.scad>
 // 5 == Tuning slides.
 // 6 == Mouthpiece receiver.
 // 7 == Valve measurement casing (for aid in knowning whether to sanding curved part of valves or just flat side)
-global_build_group = 8;
+global_build_group = 1;
 high_quality = false;
 
 casing_height = 101.5;  // Do not modify.
@@ -438,7 +438,7 @@ module first_valve_tubing(bore = 0.413, thickness = 2) {
 
   // 3mm inside the valve casing so it overlaps cleanly.
   translate([0.1, -10, 56]) rotate([90, 0, 0]) {
-    translate([0.1, 0, 0]) straight_tube(3, bore=bore);
+    translate([0, 0, 0]) straight_tube(3, bore=bore);
     translate([-9.9, 0, 1.5]) {
         curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
                     radius_2 = mmbore / 2 + thickness, bend_radius = 10,
@@ -597,8 +597,8 @@ module third_valve_tubing(bore = 0.413, thickness = 2) {
   }
 
   // 3mm inside the valve casing so it overlaps cleanly.
-  translate([0, -9.9, 56]) rotate([90, 0, 0]) {
-    translate([0.1, 0, 0]) straight_tube(3, bore=bore);
+  translate([0, -10, 56]) rotate([90, 0, 0]) {
+    translate([0, 0, 0]) straight_tube(3, bore=bore);
     translate([-9.9, 0, 1.5]) {
         curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
                     radius_2 = mmbore / 2 + thickness, bend_radius = 10,
@@ -1064,6 +1064,9 @@ module curved_tube(bore=0.413, thickness = 2.0, radius_1 = 10,
                 translate([-25, -5, bend_radius - midwidth - 20]) cube([30, 10, 20 + midwidth]);
                 translate([-20, -21.6, bend_radius - midwidth - 20]) cube([25, 21.6, 20 + midwidth]);
             }
+            // Strengthen the ends of the tubes where they bond with something else.
+            rotate([0, start_degrees, 0]) translate([-bend_radius, 0, -0.1]) cylinder(0.2, radius_1, radius_1);
+            rotate([0, end_degrees, 0]) translate([-bend_radius, 0, -0.1]) cylinder(0.2, radius_2, radius_2);
         }
 
         for(radius_1 = radius_1-thickness, radius_2 = radius_2-thickness) {
@@ -1076,8 +1079,8 @@ module curved_tube(bore=0.413, thickness = 2.0, radius_1 = 10,
         }
 
         /* Clean up the interior of the ends */
-        rotate([0, start_degrees, 0]) translate([-bend_radius, 0, -0.01]) cylinder(0.02, radius_1, radius_1);
-        rotate([0, end_degrees, 0]) translate([-bend_radius, 0, -0.01]) cylinder(0.02, radius_2, radius_2);
+        rotate([0, start_degrees, 0]) translate([-bend_radius, 0, -0.15]) cylinder(0.3, radius_1, radius_1);
+        rotate([0, end_degrees, 0]) translate([-bend_radius, 0, -0.15]) cylinder(0.3, radius_2, radius_2);
 
         if (enable_brace) {
           translate([-10, 20, bend_radius - midwidth - 10]) {
