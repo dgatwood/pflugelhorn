@@ -34,7 +34,8 @@ use <list-comprehension-demos/skin.scad>
 // 2.  Fix lead pipe so that the gap closes by making the outer tube slightly smaller inside.
 // 3.  Check valve slides for 1, 3, and 4, and if necessary, reduce width by 0.02mm.
 // 4.  Split main part of the bell for people whose printers can't print
-//     something that tall (337mm).
+//     something that tall (337mm).  Framework is in place, just need to add coupler code and
+//     code to split the bell.
 // 5.  Reenable valve_parts() when I'm done tweaking things.
 
 /*
@@ -1115,13 +1116,15 @@ module bell_long_straight_pipe(bore=0.413, thickness = 2.0, coupler_mode = false
                                          bore_2 = id_2_inches);
 }
 
-module bell(bore=0.413, thickness = 2.0) {
+module bell(bore=0.413, thickness = 2.0, split = false, testing = false) {
     bell_length = 337;
 
-    bell_main_segment(bore = bore, height = bell_length, thickness = thickness,
-                      emit_first_part = true, emit_second_part = global_in_place,
-                      emit_coupler = global_in_place);
-    if (!global_in_place) {
+    translate([0, 0, testing ? -310 : 0]) {
+        bell_main_segment(bore = bore, height = bell_length, thickness = thickness,
+                          emit_first_part = true, emit_second_part = global_in_place,
+                          emit_coupler = global_in_place);
+    }
+    if (split && !global_in_place) {
       translate([0, 0, 0]) {
         bell_main_segment(bore = bore, height = bell_length, thickness = thickness,
                           emit_first_part = false, emit_second_part = true,
@@ -1129,11 +1132,17 @@ module bell(bore=0.413, thickness = 2.0) {
       }
     }
 
-    // Big curve with couplers
-    translate([global_in_place ? 0 : -80,
-               global_in_place ? 0 : 100,
-               global_in_place ? 0 : 10 - bell_length]) {
-        bell_big_curve_with_couplers(bore = bore, thickness = thickness, bell_length = bell_length);
+    difference() {
+        // Big curve with couplers
+        translate([global_in_place ? 0 : -80,
+                   global_in_place ? 0 : 100,
+                   global_in_place ? 0 : 10 - bell_length]) {
+            bell_big_curve_with_couplers(bore = bore, thickness = thickness, bell_length = bell_length);
+        }
+        if (testing) {
+          // Clip at height of 20
+          translate([-150, -150, 20]) cube([300, 300, 100]);
+        }
     }
 
     translate([global_in_place ? 0 : -52,
@@ -1143,16 +1152,22 @@ module bell(bore=0.413, thickness = 2.0) {
     }
 
     mmbore = inches_to_mm(bore);
-
-    if (global_in_place) {
-      bell_small_curve_with_couplers(bore = bore, thickness = thickness,
-                                     bell_length = bell_length);
-    } else {
-      translate([0, -100, 0]) rotate([0, 0, 30]) translate([0, 0, 10])
-        rotate([0, -180, -15]) translate([-99.85, 14, -121])
+    
+    difference() {
+        if (global_in_place) {
           bell_small_curve_with_couplers(bore = bore, thickness = thickness,
                                          bell_length = bell_length);
+        } else {
+          translate([0, -100, 0]) rotate([0, 0, 30]) translate([0, 0, 10])
+            rotate([0, -180, -15]) translate([-99.85, 14, -121])
+              bell_small_curve_with_couplers(bore = bore, thickness = thickness,
+                                             bell_length = bell_length);
 
+        }
+        if (testing) {
+          // Clip at height of 20
+          translate([-150, -150, 20]) cube([300, 300, 100]);
+        }
     }
 
     translate([global_in_place ? 0 : -152,
@@ -1292,4 +1307,20 @@ if (global_build_group == 0) {
     small_morse_receiver(disassembled = true);
 } else if (global_build_group == 7) {
     piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2, for_measurement = true);
+}
+
+// Coupler size testing.
+if (false) {
+  difference() { 
+    bell(testing = true);
+    translate([-150, -150, -400]) cube([300, 300, 400]);
+  }
+
+  translate([60, 40, -225]) {
+    difference() {
+      // length 115
+      bell_short_straight_pipe(bore = 0.413, thickness = 2.0, coupler_mode = true);
+      translate([0, -50, 110]) cube([100, 100, 115]);
+    }
+  }
 }
