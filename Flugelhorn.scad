@@ -51,8 +51,8 @@ use <list-comprehension-demos/skin.scad>
 // 4 == Spit valve lever.
 // 5 == Tuning slides.
 // 6 == Mouthpiece receiver.
-// 7 == Valve measurement casing (for aid in knowning whether to sanding curved part of valves or just flat side)
-global_build_group = 1;
+// 7 == Valve measurement casing (for aid in knowing whether to sand curved part of valves or just flat side)
+global_build_group = 8;
 high_quality = false;
 
 casing_height = 101.5;  // Do not modify.
