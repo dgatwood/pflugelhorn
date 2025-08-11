@@ -52,7 +52,7 @@ use <list-comprehension-demos/skin.scad>
 // 5 == Tuning slides.
 // 6 == Mouthpiece receiver.
 // 7 == Valve measurement casing (for aid in knowing whether to sand curved part of valves or just flat side)
-global_build_group = 8;
+global_build_group = 1;
 high_quality = false;
 
 casing_height = 101.5;  // Do not modify.
@@ -678,22 +678,20 @@ module fourth_valve_tubing(bore = 0.413, thickness = 2) {
   // No measurements to work with, so guess.
   mmbore = inches_to_mm(bore);
 
-  brace_width = mmbore + (thickness * 2);
+  brace_width = mmbore + (thickness * 2) - 0.2;
 
   // Braces
   difference() {
-    translate([0, -36 + (brace_width / 2), -60]) cube([100, brace_width, 16]);
-      translate([0, -10, 56]) rotate([90, 0, 0]) {
-        translate([0, -137.8, 11.5]) rotate([-90, 0, 0]) cylinder(100, brace_width/2, brace_width/2, $fn = 256);
-        translate([99.9, -137.8, 11.5]) rotate([-90, 0, 0]) cylinder(100, brace_width/2, brace_width/2, $fn = 256);
-      }
-  }
-  difference() {
-    translate([0, -36 + (brace_width / 2), 9]) cube([100, brace_width, 16]);
-      translate([0, -10, 56]) rotate([90, 0, 0]) {
-        translate([0, -137.8, 11.5]) rotate([-90, 0, 0]) cylinder(100, brace_width/2, brace_width/2, $fn = 256);
-        translate([99.9, -137.8, 11.5]) rotate([-90, 0, 0]) cylinder(100, brace_width/2, brace_width/2, $fn = 256);
-      }
+    union() {
+      translate([0, -36 + (brace_width / 2), -60]) cube([100, brace_width, 16]);
+      translate([0, -36 + (brace_width / 2), 9]) cube([100, brace_width, 16]);
+    }
+    translate([0, -10, 56]) rotate([90, 0, 0]) {
+        translate([0, -150, 11.5]) rotate([-90, 0, 0])
+            cylinder(200, brace_width/2, brace_width/2, $fn = 256);
+        translate([99.9, -150, 11.5]) rotate([-90, 0, 0])
+            cylinder(200, brace_width/2, brace_width/2, $fn = 256);
+    }
   }
 
   // 3mm inside the valve casing so it overlaps cleanly.
