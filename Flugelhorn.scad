@@ -30,13 +30,11 @@ use <list-comprehension-demos/skin.scad>
 
 // To do list:
 //
-// 1.  Fix leaky valves.
-// 2.  Fix lead pipe so that the gap closes by making the outer tube slightly smaller inside.
-// 3.  Check valve slides for 1, 3, and 4, and if necessary, reduce width by 0.02mm.
-// 4.  Split main part of the bell for people whose printers can't print
+// 1.  Fix leaky valve slides (tighter tolerances).
+// 2.  Create clean way to reprint valve cores with smaller size.
+// 3.  Split main part of the bell for people whose printers can't print
 //     something that tall (337mm).  Framework is in place, just need to add coupler code and
 //     code to split the bell.
-// 5.  Reenable valve_parts() when I'm done tweaking things.
 
 /*
  * Note that unless otherwise noted, all dimensions are in mm except for
@@ -47,13 +45,33 @@ use <list-comprehension-demos/skin.scad>
 // 0 == Whole instrument (slow, useless for printing).
 // 1 == Valve section.
 // 2 == Valves and caps.
-// 3 == Bell parts.
-// 4 == Spit valve lever.
-// 5 == Tuning slides.
-// 6 == Mouthpiece receiver.
-// 7 == Valve measurement casing (for aid in knowing whether to sand curved part of valves or just flat side)
+// 3 == Main bell parts.
+// 4 == Curved bell parts.
+// 5 == Straight bell tubes.
+// 6 == Spit valve lever.
+// 7 == Tuning slides.
+// 8 == Mouthpiece receiver.
+// 9 == Valve caps.
+// 10 == Valve measurement casing (for aid in knowing whether to sand curved part of valves or just flat side; probably no longer useful)
+// 11 == Emergency replacement top for fourth valve brace.
+
 global_build_group = 1;
-high_quality = false;
+valves_horizontal = true;  // Smoothness experiment.  By making the lines go the opposite direction,
+                           // it should reduce the need for smoothing.
+
+high_quality = true;  // Makes the curved bell parts more accurate at the expense of rendering speed.
+
+// Adjust for your printer so that acetone and light sanding results in valves that move.
+// Print the valve casing first, then wipe the inside of the casing with acetone, then sand
+// the inside of the valve casing for 5 minutes per valve with 400-grit sandpaper.  Then print
+// the valve cores and use acetone and 5 minutes of 400-grit sandpaper per valve core.  See if
+// they fit.  If they are too loose, make this number smaller.  If they are too tight, make it
+// bigger.
+
+// 0.05: Too tight even after sanding.
+// 0.08: Just right.
+// 0.1: Maybe just a hair too loose.
+global_valve_gap_expansion = 0.08;
 
 casing_height = 101.5;  // Do not modify.
 global_in_place = (global_build_group == 0);  // Do not modify.
@@ -679,6 +697,7 @@ module fourth_valve_tubing(bore = 0.413, thickness = 2) {
   mmbore = inches_to_mm(bore);
 
   brace_width = mmbore + (thickness * 2) - 0.2;
+  bore_size = mmbore + (thickness * 2) - 0.8;
 
   // Braces
   difference() {
@@ -688,9 +707,9 @@ module fourth_valve_tubing(bore = 0.413, thickness = 2) {
     }
     translate([0, -10, 56]) rotate([90, 0, 0]) {
         translate([0, -150, 11.5]) rotate([-90, 0, 0])
-            cylinder(200, brace_width/2, brace_width/2, $fn = 256);
+            cylinder(200, bore_size/2, bore_size/2, $fn = 256);
         translate([99.9, -150, 11.5]) rotate([-90, 0, 0])
-            cylinder(200, brace_width/2, brace_width/2, $fn = 256);
+            cylinder(200, bore_size/2, bore_size/2, $fn = 256);
     }
   }
 
@@ -829,23 +848,36 @@ module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
   }
 }
 
-module valve_parts(bore = 0.413, enable_caps = true) {
-  translate([0, 40, 0]) piston_valve(bore, number = 1);
-  translate([40, 40, 0]) piston_valve(bore, number = 2);
-  translate([80, 40, 0]) piston_valve(bore, number = 3);
-  translate([120, 40, 0]) piston_valve(bore, number = 4);
-
-  if (enable_caps) {
-    translate([0, -60, 0]) piston_valve_cap();
-    translate([40, -60, 0]) piston_valve_cap();
-    translate([80, -60, 0]) piston_valve_cap();
-    translate([120, -60, 0]) piston_valve_cap();
-
-    translate([0, -100, 0]) piston_valve_cap();
-    translate([40, -100, 0]) piston_valve_cap();
-    translate([80, -100, 0]) piston_valve_cap();
-    translate([120, -100, 0]) piston_valve_cap();
+module valve_cores(bore = 0.413) {
+  // valves_horizontal
+  translate([0, 0, valves_horizontal ? 49 : 0]) {
+    rotate([valves_horizontal ? -90 : 0, 0, 0]) {
+      translate([0, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
+        piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                     number = 1);
+      translate([40, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
+        piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                     number = 2);
+      translate([80, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
+        piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                     number = 3);
+      translate([120, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
+        piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                     number = 4);
+    }
   }
+}
+
+module valve_caps() {
+  translate([0, -60, 0]) piston_valve_cap();
+  translate([40, -60, 0]) piston_valve_cap();
+  translate([80, -60, 0]) piston_valve_cap();
+  translate([120, -60, 0]) piston_valve_cap();
+
+  translate([0, -100, 0]) piston_valve_cap();
+  translate([40, -100, 0]) piston_valve_cap();
+  translate([80, -100, 0]) piston_valve_cap();
+  translate([120, -100, 0]) piston_valve_cap();
 }
 
 
@@ -1114,64 +1146,76 @@ module bell_long_straight_pipe(bore=0.413, thickness = 2.0, coupler_mode = false
                                          bore_2 = id_2_inches);
 }
 
-module bell(bore=0.413, thickness = 2.0, split = false, testing = false) {
+module bell(bore=0.413, thickness = 2.0, split_bell = false, testing = false,
+            enable_main = true, enable_curves = true, enable_straight = true) {
     bell_length = 337;
 
-    translate([0, 0, testing ? -310 : 0]) {
-        bell_main_segment(bore = bore, height = bell_length, thickness = thickness,
-                          emit_first_part = true, emit_second_part = global_in_place,
-                          emit_coupler = global_in_place);
-    }
-    if (split && !global_in_place) {
-      translate([0, 0, 0]) {
-        bell_main_segment(bore = bore, height = bell_length, thickness = thickness,
-                          emit_first_part = false, emit_second_part = true,
-                          emit_coupler = true);
+    if (enable_main) {
+      translate([0, 0, testing ? -310 : 0]) {
+          bell_main_segment(bore = bore, height = bell_length, thickness = thickness,
+                            emit_first_part = true, emit_second_part = global_in_place,
+                            emit_coupler = global_in_place);
+      }
+      if (split_bell && !global_in_place) {
+        translate([0, 0, 0]) {
+          bell_main_segment(bore = bore, height = bell_length, thickness = thickness,
+                            emit_first_part = false, emit_second_part = true,
+                            emit_coupler = true);
+        }
       }
     }
 
-    difference() {
-        // Big curve with couplers
-        translate([global_in_place ? 0 : -80,
-                   global_in_place ? 0 : 100,
-                   global_in_place ? 0 : 10 - bell_length]) {
-            bell_big_curve_with_couplers(bore = bore, thickness = thickness, bell_length = bell_length);
-        }
-        if (testing) {
-          // Clip at height of 20
-          translate([-150, -150, 20]) cube([300, 300, 100]);
-        }
+    if (enable_curves) {
+      difference() {
+          // Big curve with couplers
+          translate([global_in_place ? 0 : -80,
+                     global_in_place ? 0 : -60,
+                     global_in_place ? 0 : 10 - bell_length]) {
+              bell_big_curve_with_couplers(bore = bore, thickness = thickness,
+                                           bell_length = bell_length);
+          }
+          if (testing) {
+            // Clip at height of 20
+            translate([-150, -150, 20]) cube([300, 300, 100]);
+          }
+      }
     }
 
-    translate([global_in_place ? 0 : -52,
-               global_in_place ? 0 : 70,
-               global_in_place ? 0 : -121]) {
-      bell_long_straight_pipe(bore = bore, thickness = thickness);
+    if (enable_straight) {
+      translate([global_in_place ? 0 : -52,
+                 global_in_place ? 0 : 70,
+                 global_in_place ? 0 : -121]) {
+        bell_long_straight_pipe(bore = bore, thickness = thickness);
+      }
     }
 
     mmbore = inches_to_mm(bore);
     
-    difference() {
-        if (global_in_place) {
-          bell_small_curve_with_couplers(bore = bore, thickness = thickness,
-                                         bell_length = bell_length);
-        } else {
-          translate([0, -100, 0]) rotate([0, 0, 30]) translate([0, 0, 10])
-            rotate([0, -180, -15]) translate([-99.85, 14, -121])
-              bell_small_curve_with_couplers(bore = bore, thickness = thickness,
-                                             bell_length = bell_length);
+    if (enable_curves) {
+      difference() {
+          if (global_in_place) {
+            bell_small_curve_with_couplers(bore = bore, thickness = thickness,
+                                           bell_length = bell_length);
+          } else {
+            translate([0, -100, 0]) rotate([0, 0, 30]) translate([0, 0, 10])
+              rotate([0, -180, -15]) translate([-99.85, 14, -121])
+                bell_small_curve_with_couplers(bore = bore, thickness = thickness,
+                                               bell_length = bell_length);
 
-        }
-        if (testing) {
-          // Clip at height of 20
-          translate([-150, -150, 20]) cube([300, 300, 100]);
-        }
+          }
+          if (testing) {
+            // Clip at height of 20
+            translate([-150, -150, 20]) cube([300, 300, 100]);
+          }
+      }
     }
 
-    translate([global_in_place ? 0 : -152,
-               global_in_place ? 0 : 80,
-               global_in_place ? 0 : -121]) {
-      bell_short_straight_pipe(bore = bore, thickness = thickness);
+    if (enable_straight) {
+      translate([global_in_place ? 0 : -152,
+                 global_in_place ? 0 : 80,
+                 global_in_place ? 0 : -121]) {
+        bell_short_straight_pipe(bore = bore, thickness = thickness);
+      }
     }
 
 // 400mm end of bell to outer edge of first curve.
@@ -1282,16 +1326,22 @@ if (global_build_group == 0) {
     // Group 1: Valve casing.
     translate([100, 0, casing_height]) rotate([0, 180, 0]) valve_block();
 } else if (global_build_group == 2) {
-    valve_parts(enable_caps = false);
+    valve_cores();
 } else if (global_build_group == 3) {
     // Group 2: Bell parts.
-    bell();
+    bell(enable_main = true, enable_curves = false, enable_straight = false);
 } else if (global_build_group == 4) {
+    // Group 2: Bell parts.
+    bell(enable_main = false, enable_curves = true, enable_straight = false);
+} else if (global_build_group == 5) {
+    // Group 2: Bell parts.
+    bell(enable_main = false, enable_curves = false, enable_straight = true);
+} else if (global_build_group == 6) {
     // Output the spit valve lever.  This is a small part that requires somewhat
     // intricate support, and probably has to use dissolvable support as a result,
     // so output it as its own file.
     translate([0, 45, 8]) rotate([90, 0, 0]) spit_valve(enable_mount = false, enable_flap = true);
-} else if (global_build_group == 5) {
+} else if (global_build_group == 7) {
     // Tuning slides - use ONLY *external* support (manual paint) or dissolvable
     // supports (or both).
 
@@ -1299,13 +1349,32 @@ if (global_build_group == 0) {
     translate([-50, 0, 20]) rotate([180, 0, 0]) second_valve_slide();
     translate([-50, 50, 78]) rotate([180, 0, 0]) third_valve_slide();
     translate([-50, -50, 107]) rotate([180, 0, 0]) fourth_valve_slide();
-} else if (global_build_group == 6) {
+} else if (global_build_group == 8) {
     // Mouthpiece receiver - use ONLY *external* support (manual paint) or dissolvable
     // supports (or both).
     small_morse_receiver(disassembled = true);
-} else if (global_build_group == 7) {
+} else if (global_build_group == 9) {
+    valve_caps();
+} else if (global_build_group == 10) {
     piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2, for_measurement = true);
+} else if (global_build_group == 11) {
+  // If your support tree fails on one of the large braces, this can be used to patch it.
+  // Just print this and use glue or a heat gun to make it stick.
+  bore = 0.413;
+  thickness = 2.0;
+  mmbore = inches_to_mm(bore);
+  brace_width = mmbore + (thickness * 2);
+  difference() {
+    translate([0, -36 + (brace_width / 2), 0]) cube([100, brace_width, 1]);
+    translate([0, -10, 56]) rotate([90, 0, 0]) {
+        translate([0, -150, 11.5]) rotate([-90, 0, 0])
+            cylinder(200, brace_width/2, brace_width/2, $fn = 256);
+        translate([99.9, -150, 11.5]) rotate([-90, 0, 0])
+            cylinder(200, brace_width/2, brace_width/2, $fn = 256);
+    }
+  }
 }
+
 
 // Coupler size testing.
 if (false) {
