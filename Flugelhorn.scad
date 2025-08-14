@@ -429,14 +429,14 @@ module tuning_slide(leading_length, slide_length, joint_length, trailing_length,
   if (!inner_only) {
       // Exterior slide part (larger size, thick).
       color([1.0, 1.0, 0.0]) translate([0, exterior_hoffset, exterior_voffset])
-          straight_tube(slide_length, slide_thickness,
+          straight_tube(slide_length, thickness,
                         bore + (2 * (slide_gap_expansion_inches + slide_thickness_inches)));
 
 
-      // Joint (interior is standard bore; exterior is as large as exterior slide part).
+      // Joint (interior is standard bore; exterior is larger than exterior slide part).
       translate([0, exterior_hoffset, exterior_voffset + slide_length])
           straight_tube(joint_length,
-                        slide_thickness + (slide_thickness + slide_gap_expansion),
+                        slide_thickness + (slide_thickness + slide_gap_expansion) + slide_thickness,
                         bore);
 
       // Trailing tube (normal tube).
@@ -1389,5 +1389,15 @@ if (false) {
       bell_short_straight_pipe(bore = 0.413, thickness = 2.0, coupler_mode = true);
       translate([0, -50, 110]) cube([100, 100, 115]);
     }
+  }
+}
+
+if (false) {
+  intersection() {
+    difference() {
+      translate([100, 0, 45]) rotate([0, 180, 0]) valve_block();
+      translate([-300, -300, -600]) cube([600, 600, 600]);
+    }
+    translate([-250, -313, 0]) cube([300, 300, 300]);
   }
 }
