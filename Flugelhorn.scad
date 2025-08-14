@@ -15,24 +15,40 @@ use <list-comprehension-demos/skin.scad>
 // Assembly notes: Valve tolerances must be tight or the instrument will be
 // unplayable.  To deal with this, you will need to lap the valves as follows:
 //
-// 1.  Apply a thick coating of Plastruct Plastic weld to the valve.
-// 2.  About half a minute after you finish, use acetone with a paper towel
-//     to clean off the solvent/glue that you just added.
-// 3.  Wash the valve with dish detergent.
-// 4.  Perform three sanding passes with 400-grit emery cloth — two passes
-//     vertically down the length of the valve and one pass in small circles.
-//     In each pass, sand until not obviously sticky.  Wash with dish
-//     detergent between passes.
-// 5.  Allow the valves to dry.  If they are still sticky after an hour,
-//     do another sanding and washing pass.  Repeat until not sticky.
+// 1.  Rub significant amounts of acetone with a paper towel on all of the
+//     outside surfaces in a direction perpendicular to the layer lines.
+//     Press moderately hard.
+// 2.  *Immediately* sand with 400-grit sandpaper until you have removed
+//     nearly all of the bleached portion of the plastic.  Rub the sandpaper
+//     perpendicular to the layer lines to the maximum extent possible.
+// 3.  Do the same thing to the inside of a valve measurement casing.
+// 4.  If, after sanding, the valves are still too snug, increase the value of
+//     the global_valve_gap_expansion variable.  If they leak significantly
+//     when you blow into one side of the casing and plug the other side with
+//     your finger, then decrease the value of that variable.  Reprint the
+//     valve core only until it moves freely *and* leaks are minimized.
+// 5.  Print the real valve casing, and repeat the acetone and sanding
+//     process on the inside of that.  If you find that the valves stick
+//     inside the real valve casing after a similar amount of sanding to
+//     what you did on the measurement casing, thatt likely means that you
+//     need to sand the flat surface of the valves more.
 //
-// Note that these instructions assume PLA.  Other materials may vary.
+// Note that extra sanding on the flat surface is all but guaranteed if you
+// print the valve horizontally so that the layer lines on the valve core
+// run perpendicular to the, lines on the valve casing, because you won't
+// have any layer lines on the bottom surface, so the acetone won't dissolve
+// as much, and you won't be able to sand it away as easily.
+//
+// Note that these instructions assume PLA.  Other materials may require
+// different solvents.  Note that use of more flexible materials (e.g. PETG)
+// is *not* recommended for the valves or valve casings because of the need
+// for a hard contact surface on the valve core and the interior of the
+// valve casing.
 
 // To do list:
 //
 // 1.  Fix leaky valve slides (tighter tolerances).
-// 2.  Create clean way to reprint valve cores with smaller size.
-// 3.  Split main part of the bell for people whose printers can't print
+// 2.  Split main part of the bell for people whose printers can't print
 //     something that tall (337mm).  Framework is in place, just need to add coupler code and
 //     code to split the bell.
 
