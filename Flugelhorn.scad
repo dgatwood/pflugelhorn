@@ -71,7 +71,7 @@ use <list-comprehension-demos/skin.scad>
 // 10 == Valve measurement casing (for aid in knowing whether to sand curved part of valves or just flat side; probably no longer useful)
 // 11 == Emergency replacement top for fourth valve brace.
 
-global_build_group = 1;
+global_build_group = 7;
 valves_horizontal = true;  // Smoothness experiment.  By making the lines go the opposite direction,
                            // it should reduce the need for smoothing.
 
@@ -88,6 +88,9 @@ high_quality = true;  // Makes the curved bell parts more accurate at the expens
 // 0.08: Just right.
 // 0.1: Maybe just a hair too loose.
 global_valve_gap_expansion = 0.08;
+
+// 0.05: A bit too much leakage.
+global_slide_gap = 0.05;
 
 casing_height = 101.5;  // Do not modify.
 global_in_place = (global_build_group == 0);  // Do not modify.
@@ -525,11 +528,14 @@ module first_valve_tubing(bore = 0.413, thickness = 2) {
   }
 }
 
-module first_valve_slide(bore = 0.413, thickness = 2) {
+module first_valve_slide(bore = 0.413, thickness = 2, slide_gap = global_slide_gap) {
+  thickness_compensation = 0.1 - slide_gap;
+
   tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10,
                trailing_length = 10, thickness = thickness, slide_thickness = 1,
-               slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore=0.413,
-               disassembled = false, inner_only = true, outer_only = false, shift = 0);
+               slide_gap_expansion = 0.1, thickness_compensation = thickness_compensation,
+               bore=0.413, disassembled = false, inner_only = true, outer_only = false,
+               shift = 0);
 
   mmbore = inches_to_mm(bore);
 
@@ -543,8 +549,9 @@ module first_valve_slide(bore = 0.413, thickness = 2) {
   translate([-20, 0, 0])
       tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10,
                    trailing_length = 10, thickness = 2, slide_thickness = 1,
-                   slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore=0.413,
-                   disassembled = false, inner_only = true, outer_only = false, shift = 0);
+                   slide_gap_expansion = 0.1, thickness_compensation = thickness_compensation,
+                   bore=0.413, disassembled = false, inner_only = true, outer_only = false,
+                   shift = 0);
 }
 
 module second_valve_tubing(bore = 0.413) {
@@ -582,11 +589,14 @@ module second_valve_tubing(bore = 0.413) {
   }
 }
 
-module second_valve_slide(bore = 0.413, thickness = 2) {
+module second_valve_slide(bore = 0.413, thickness = 2, slide_gap = global_slide_gap) {
+  thickness_compensation = 0.1 - slide_gap;
+
   tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10,
                trailing_length = 10, thickness = thickness, slide_thickness = 1,
-               slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore = 0.413,
-               disassembled = false, inner_only = true, outer_only = false, shift = 0);
+               slide_gap_expansion = 0.1, thickness_compensation = thickness_compensation,
+               bore = 0.413, disassembled = false, inner_only = true, outer_only = false,
+               shift = 0);
 
   mmbore = inches_to_mm(bore);
 
@@ -600,8 +610,9 @@ module second_valve_slide(bore = 0.413, thickness = 2) {
   translate([-16, 0, 0]) {
     tuning_slide(leading_length = 10, slide_length = 10, joint_length = 10,
                  trailing_length = 10, thickness = thickness, slide_thickness = 1,
-                 slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore = 0.413,
-                 disassembled = false, inner_only = true, outer_only = false, shift = 0);
+                 slide_gap_expansion = 0.1, thickness_compensation = thickness_compensation,
+                 bore = 0.413, disassembled = false, inner_only = true, outer_only = false,
+                 shift = 0);
   }
 }
 
@@ -685,11 +696,14 @@ module third_valve_tubing(bore = 0.413, thickness = 2) {
   }
 }
 
-module third_valve_slide(bore = 0.413, thickness = 2) {
+module third_valve_slide(bore = 0.413, thickness = 2, slide_gap = global_slide_gap) {
+  thickness_compensation = 0.1 - slide_gap;
+
   tuning_slide(leading_length = 10, slide_length = 68, joint_length = 10,
                trailing_length = 10, thickness = thickness, slide_thickness = 1,
-               slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore = 0.413,
-               disassembled = false, inner_only = true, outer_only = false, shift = 0);
+               slide_gap_expansion = 0.1, thickness_compensation = thickness_compensation,
+               bore = 0.413, disassembled = false, inner_only = true, outer_only = false,
+               shift = 0);
 
   mmbore = inches_to_mm(bore);
 
@@ -703,7 +717,7 @@ module third_valve_slide(bore = 0.413, thickness = 2) {
   translate([-20, 0, 0])
       tuning_slide(leading_length = 10, slide_length = 68, joint_length = 10,
                    trailing_length = 10, thickness = 2, slide_thickness = 1,
-                   slide_gap_expansion = 0.1, thickness_compensation = 0.05,
+                   slide_gap_expansion = 0.1, thickness_compensation = thickness_compensation,
                    bore = 0.413, disassembled = false, inner_only = true,
                    outer_only = false, shift = 0);
 }
@@ -786,11 +800,14 @@ module fourth_valve_tubing(bore = 0.413, thickness = 2) {
   }
 }
 
-module fourth_valve_slide(bore = 0.413, thickness = 2) {
+module fourth_valve_slide(bore = 0.413, thickness = 2, slide_gap = global_slide_gap) {
+  thickness_compensation = 0.1 - slide_gap;
+
   tuning_slide(leading_length = 5, slide_length = 102, joint_length = 5,
                trailing_length = 5, thickness = thickness, slide_thickness = 1,
-               slide_gap_expansion = 0.1, thickness_compensation = 0.05, bore = 0.413,
-               disassembled = false, inner_only = true, outer_only = false, shift = 0);
+               slide_gap_expansion = 0.1, thickness_compensation = thickness_compensation,
+               bore = 0.413, disassembled = false, inner_only = true, outer_only = false,
+               shift = 0);
 
   mmbore = inches_to_mm(bore);
 
@@ -815,7 +832,7 @@ module fourth_valve_slide(bore = 0.413, thickness = 2) {
   translate([100.1, 0, 0])
       tuning_slide(leading_length = 5, slide_length = 102, joint_length = 5,
                    trailing_length = 5, thickness = 2, slide_thickness = 1,
-                   slide_gap_expansion = 0.1, thickness_compensation = 0.05,
+                   slide_gap_expansion = 0.1, thickness_compensation = thickness_compensation,
                    bore = 0.413, disassembled = false, inner_only = true,
                    outer_only = false, shift = 0);
 }
