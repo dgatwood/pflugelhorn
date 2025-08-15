@@ -90,7 +90,8 @@ high_quality = true;  // Makes the curved bell parts more accurate at the expens
 global_valve_gap_expansion = 0.08;
 
 // 0.05: A bit too much leakage.
-global_slide_gap = 0.05;
+// 0.02: Just right.
+global_slide_gap = 0.02;
 
 casing_height = 101.5;  // Do not modify.
 global_in_place = (global_build_group == 0);  // Do not modify.
@@ -1378,10 +1379,11 @@ if (global_build_group == 0) {
     // Tuning slides - use ONLY *external* support (manual paint) or dissolvable
     // supports (or both).
 
-    translate([50, 0, 20]) rotate([180, 0, 0]) first_valve_slide();
-    translate([-50, 0, 20]) rotate([180, 0, 0]) second_valve_slide();
-    translate([-50, 50, 78]) rotate([180, 0, 0]) third_valve_slide();
-    translate([-50, -50, 107]) rotate([180, 0, 0]) fourth_valve_slide();
+    // Upside down to reduce support hassles.
+    translate([50, 0, 18]) rotate([0, 0, 0]) first_valve_slide();
+    translate([-50, 0, 18]) rotate([0, 0, 0]) second_valve_slide();
+    translate([-50, 50, 18]) rotate([0, 0, 0]) third_valve_slide();
+    translate([-50, -50, 18]) rotate([0, 0, 0]) fourth_valve_slide();
 } else if (global_build_group == 8) {
     // Mouthpiece receiver - use ONLY *external* support (manual paint) or dissolvable
     // supports (or both).
