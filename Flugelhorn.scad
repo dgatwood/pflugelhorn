@@ -30,8 +30,8 @@ use <list-comprehension-demos/skin.scad>
 // 5.  Print the real valve casing, and repeat the acetone and sanding
 //     process on the inside of that.  If you find that the valves stick
 //     inside the real valve casing after a similar amount of sanding to
-//     what you did on the measurement casing, thatt likely means that you
-//     need to sand the flat surface of the valves more.
+//     what you did on the measurement casing, increase the flat side
+//     extra expansion.
 //
 // Note that extra sanding on the flat surface is all but guaranteed if you
 // print the valve horizontally so that the layer lines on the valve core
@@ -60,7 +60,7 @@ use <list-comprehension-demos/skin.scad>
 
 // 0 == Whole instrument (slow, useless for printing).
 // 1 == Valve section.
-// 2 == Valves and caps.
+// 2 == Valve cores.
 // 3 == Main bell parts.
 // 4 == Curved bell parts.
 // 5 == Straight bell tubes.
@@ -68,29 +68,38 @@ use <list-comprehension-demos/skin.scad>
 // 7 == Tuning slides.
 // 8 == Mouthpiece receiver.
 // 9 == Valve caps.
-// 10 == Valve measurement casing (for aid in knowing whether to sand curved part of valves or just flat side; probably no longer useful)
+// 10 == Valve measurement casing (to aid in adjusting tolerances).
 // 11 == Emergency replacement top for fourth valve brace.
 
-global_build_group = 7;
+global_build_group = 2;
 valves_horizontal = true;  // Smoothness experiment.  By making the lines go the opposite direction,
                            // it should reduce the need for smoothing.
 
 high_quality = true;  // Makes the curved bell parts more accurate at the expense of rendering speed.
 
 // Adjust for your printer so that acetone and light sanding results in valves that move.
-// Print the valve casing first, then wipe the inside of the casing with acetone, then sand
-// the inside of the valve casing for 5 minutes per valve with 400-grit sandpaper.  Then print
-// the valve cores and use acetone and 5 minutes of 400-grit sandpaper per valve core.  See if
-// they fit.  If they are too loose, make this number smaller.  If they are too tight, make it
-// bigger.
+// Print the valve measurement casing first, then lap the valves as described above.  If you line up
+// two holes in the valve with holes in the casing, you should be able to blow air through, then stop
+// the hole with your finger and get no leakage.  If so, it's just right.  If it is too tight, make
+// this number bigger.  If it leaks, make this number smaller.
+
+
+// Old data not done with air check:
+// 0.02: Sticks in sizer.
 
 // 0.05: Too tight even after sanding.
 // 0.08: Just right.
 // 0.1: Maybe just a hair too loose.
-global_valve_gap_expansion = 0.08;
+
+global_valve_gap_expansion = 0.04;
+
+// If the valves don't move in the real casing, but move freely in the measurement casing,
+// increase this number.  If there's an obvious air gap, decrease it.
+global_valve_gap_flat_edge_extra_expansion = 0.15;
 
 // 0.05: A bit too much leakage.
-// 0.02: Just right.
+// 0.035: Too loose for short tubes.
+// 0.02: Way too snug for fourth valve, but better to sand than have the slides fall out.
 global_slide_gap = 0.02;
 
 casing_height = 101.5;  // Do not modify.
@@ -274,11 +283,13 @@ module small_morse_receiver(lead_pipe_length_in_mm = 114, slide_gap_expansion = 
  * @param valve_gap_expansion The amount to shrink or expand the valve to compensate
  *                            for inaccuracy in the size of the model.
  */
-module piston_valve_raw(valve_gap_expansion = 0.01) {
+module piston_valve_raw(valve_gap_expansion = 0.01, flat_edge_extra_expansion = 0.00) {
   difference() {
     cylinder(70, 11 - valve_gap_expansion, 11 - valve_gap_expansion, $fn=256);
+
     // Flat edge
-    rotate([0, 0, 45]) translate([-9, 9 - valve_gap_expansion, -1]) cube([20, 20, 72]);
+    rotate([0, 0, 45]) translate([-9, 9 - valve_gap_expansion - flat_edge_extra_expansion, -1])
+        cube([20, 20, 72]);
   }
 }
 
@@ -292,11 +303,13 @@ module piston_valve_raw(valve_gap_expansion = 0.01) {
  *                             that the valve moves freely
  *                             without leaking.
  */
-module piston_valve(bore=0.413, valve_gap_expansion = 0.01, number = 1) {
+module piston_valve(bore=0.413, valve_gap_expansion = 0.01,
+                    flat_edge_extra_expansion = 0.00, number = 1) {
   odd = ((number % 2) != 0);
   mmbore = inches_to_mm(bore);
   difference() {
-    piston_valve_raw(valve_gap_expansion);
+    piston_valve_raw(valve_gap_expansion = valve_gap_expansion,
+                     flat_edge_extra_expansion = flat_edge_extra_expansion);
     translate([0, 0, 62.5]) cylinder(8, 1.65, 1.65, $fn = 256);  // 3.3mm bore hole to tap an m4 screw for the valve stem.
 
     // To/from valve slide - top (L-bores)
@@ -325,6 +338,12 @@ module piston_valve(bore=0.413, valve_gap_expansion = 0.01, number = 1) {
 
     // Valve number stamp
     translate([0, 0, 65]) linear_extrude(6) rotate([0, 0, 45]) translate([2, -3.5, 0]) text(text = str(number), size = 8);
+
+    gap1 = round(valve_gap_expansion * 100) / 100;
+    gap2 = round(flat_edge_extra_expansion * 100) / 100;
+
+    translate([0, 0, 65]) linear_extrude(6) rotate([0, 0, 135]) translate([-3.5, 6.25, 0]) text(text = str(gap1), size = 2.5);
+    translate([0, 0, 65]) linear_extrude(6) rotate([0, 0, 135]) translate([-3.5, 3, 0]) text(text = str(gap2), size = 2.5);
   }
   // Wall between slant bore and L-bore
   intersection() {
@@ -334,12 +353,14 @@ module piston_valve(bore=0.413, valve_gap_expansion = 0.01, number = 1) {
     } else {
       translate([0, -25, 28]) rotate([27, 35, 45]) cube([30, 30, 2]);
     }
-    piston_valve_raw(valve_gap_expansion);
+    piston_valve_raw(valve_gap_expansion = valve_gap_expansion,
+                     flat_edge_extra_expansion = flat_edge_extra_expansion);
   }
 }
 
 module piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2, for_measurement = false) {
     even = (number % 2) == 0;
+    measurement = (number == 0);
 
     rotate([0, 0, -45]) {
         mmbore = inches_to_mm(bore);
@@ -358,6 +379,13 @@ module piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2, for_mea
                                       cylinder(18, mmbore/2, mmbore/2, $fn=256);
                                   rotate([0, 90, 45]) translate([even ? -30 : -46, 0, 9])
                                       cylinder(10, mmbore/2, mmbore/2, $fn=256);
+                                  if (measurement) {
+                                    // Duplicate of the above, with opposite holes.
+                                    rotate([0, 90, 45]) translate([!even ? -46 : -30, 0, -18])
+                                        cylinder(18, mmbore/2, mmbore/2, $fn=256);
+                                    rotate([0, 90, 45]) translate([!even ? -30 : -46, 0, 9])
+                                        cylinder(10, mmbore/2, mmbore/2, $fn=256);
+                                  }
                                   rotate([0, 90, 135]) translate([-46, 0, -18])
                                       cylinder(10, mmbore/2, mmbore/2, $fn=256);
                                   rotate([0, 90, 315]) translate([-30, 0, 9])
@@ -888,16 +916,22 @@ module valve_cores(bore = 0.413) {
     rotate([valves_horizontal ? -90 : 0, 0, 0]) {
       translate([0, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
         piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                     flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
                      number = 1);
+if (false) {
       translate([40, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
         piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                     flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
                      number = 2);
       translate([80, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
         piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                     flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
                      number = 3);
       translate([120, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
         piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                     flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
                      number = 4);
+}
     }
   }
 }
@@ -1224,7 +1258,7 @@ module bell(bore=0.413, thickness = 2.0, split_bell = false, testing = false,
     }
 
     mmbore = inches_to_mm(bore);
-    
+
     if (enable_curves) {
       difference() {
           if (global_in_place) {
@@ -1391,7 +1425,7 @@ if (global_build_group == 0) {
 } else if (global_build_group == 9) {
     valve_caps();
 } else if (global_build_group == 10) {
-    piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2, for_measurement = true);
+    piston_valve_casing(bore=0.413, number=0, valve_thread_pitch = 2, for_measurement = true);
 } else if (global_build_group == 11) {
   // If your support tree fails on one of the large braces, this can be used to patch it.
   // Just print this and use glue or a heat gun to make it stick.
@@ -1413,7 +1447,7 @@ if (global_build_group == 0) {
 
 // Coupler size testing.
 if (false) {
-  difference() { 
+  difference() {
     bell(testing = true);
     translate([-150, -150, -400]) cube([300, 300, 400]);
   }
