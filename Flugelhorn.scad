@@ -13,31 +13,39 @@ use <scad-utils/shapes.scad>
 use <list-comprehension-demos/skin.scad>
 
 // Assembly notes: Valve tolerances must be tight or the instrument will be
-// unplayable.  To deal with this, you will need to lap the valves as follows:
+// unplayable.  To deal with this, you need to do several things:
 //
-// 1.  Rub significant amounts of acetone with a paper towel on all of the
-//     outside surfaces in a direction perpendicular to the layer lines.
-//     Press moderately hard.
-// 2.  *Immediately* sand with 400-grit sandpaper until you have removed
-//     nearly all of the bleached portion of the plastic.  Rub the sandpaper
-//     perpendicular to the layer lines to the maximum extent possible.
-// 3.  Do the same thing to the inside of a valve measurement casing.
-// 4.  If, after sanding, the valves are still too snug, increase the value of
-//     the global_valve_gap_expansion variable.  If they leak significantly
-//     when you blow into one side of the casing and plug the other side with
-//     your finger, then decrease the value of that variable.  Reprint the
-//     valve core only until it moves freely *and* leaks are minimized.
-// 5.  Print the real valve casing, and repeat the acetone and sanding
-//     process on the inside of that.  If you find that the valves stick
-//     inside the real valve casing after a similar amount of sanding to
-//     what you did on the measurement casing, increase the flat side
-//     extra expansion.
+// 1.  Print the valves and valve blocks with the smallest layer height that
+//     your printer can deal with.  0.08mm is recommended as the *upper*
+//     bound.
+// 2.  When you print the valves, the valve casing, and the valve measurement
+//     casing, lap the contact surfaces to ensure that they are smooth enough.
 //
-// Note that extra sanding on the flat surface is all but guaranteed if you
-// print the valve horizontally so that the layer lines on the valve core
-// run perpendicular to the, lines on the valve casing, because you won't
-// have any layer lines on the bottom surface, so the acetone won't dissolve
-// as much, and you won't be able to sand it away as easily.
+//     The lapping process is as follows:
+//
+//     a.  Rub significant amounts of acetone with a paper towel on all of
+//         the outside surfaces of the valve or interior surfaces of the
+//         casing in a direction perpendicular to the layer lines.  Press
+//         moderately hard.
+//     b.  *Immediately* sand with 400-grit sandpaper until you have removed
+//         nearly all of the bleached portion of the plastic.  Rub the
+//         sandpaper perpendicular to the layer lines to the maximum extent
+//         possible.
+// 3.  After printing and lapping the valve cores and the measurement casing,
+//     check it inside the measurement casing.
+//
+//     a.  If it is too tight to move freely, increase global_valve_gap_expansion
+//         and reprint the model.
+//     b.  If you blow air through the valve and stop the other side with your
+//         finger and air continues to flow (leaking around the valve), then
+//         *decrease* global_valve_gap_expansion and reprint the model.
+//
+// 4.  Once it moves freely and does not leak in the measurement casing, print
+//     the main valve casing and lap the interior surfaces.
+//
+// 5.  If the valve is too snug in the real casing, increase the value of
+//     global_valve_gap_flat_edge_extra_expansion and reprint and relap the
+//     valve cores.
 //
 // Note that these instructions assume PLA.  Other materials may require
 // different solvents.  Note that use of more flexible materials (e.g. PETG)
@@ -77,21 +85,21 @@ valves_horizontal = true;  // Smoothness experiment.  By making the lines go the
 
 high_quality = true;  // Makes the curved bell parts more accurate at the expense of rendering speed.
 
+enable_all_valves = true;  // Set to false if you're reprinting valves repeatedly to adjust size.
+
 // Adjust for your printer so that acetone and light sanding results in valves that move.
 // Print the valve measurement casing first, then lap the valves as described above.  If you line up
 // two holes in the valve with holes in the casing, you should be able to blow air through, then stop
 // the hole with your finger and get no leakage.  If so, it's just right.  If it is too tight, make
 // this number bigger.  If it leaks, make this number smaller.
 
-
 // Old data not done with air check:
 // 0.02: Sticks in sizer.
+// 0.04: Sticks in sizer.
+// 0.06: Still just a hair too big.
+// 0.08: Still takes too much sanding, but can work.
 
-// 0.05: Too tight even after sanding.
-// 0.08: Just right.
-// 0.1: Maybe just a hair too loose.
-
-global_valve_gap_expansion = 0.04;
+global_valve_gap_expansion = 0.09;
 
 // If the valves don't move in the real casing, but move freely in the measurement casing,
 // increase this number.  If there's an obvious air gap, decrease it.
@@ -918,7 +926,7 @@ module valve_cores(bore = 0.413) {
         piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
                      flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
                      number = 1);
-if (false) {
+if (enable_all_valves) {
       translate([40, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
         piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
                      flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
