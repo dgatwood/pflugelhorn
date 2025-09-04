@@ -78,8 +78,9 @@ use <list-comprehension-demos/skin.scad>
 // 9 == Valve caps.
 // 10 == Valve measurement casing (to aid in adjusting tolerances).
 // 11 == Emergency replacement top for fourth valve brace.
+// 12 == valves and valve block
 
-global_build_group = 2;
+global_build_group = 12;
 valves_horizontal = true;  // Smoothness experiment.  By making the lines go the opposite direction,
                            // it should reduce the need for smoothing.
 
@@ -912,7 +913,7 @@ module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
   }
 }
 
-module valve_cores(bore = 0.413) {
+module valve_cores(bore = 0.413, horizontal = valves_horizontal, in_place = false) {
   // valves_horizontal
   color([0.5, 0.5, 0.5])
   translate([0, 0, valves_horizontal ? 49 : 0]) {
@@ -1451,6 +1452,13 @@ if (global_build_group == 0) {
             cylinder(200, brace_width/2, brace_width/2, $fn = 256);
     }
   }
+} else if (global_build_group == 12) {
+    down = true;
+    piston_valve_casing(bore = 0.413, number = 0, valve_thread_pitch = 2, for_measurement = true);
+    translate([0, 0, down ? 11.5 : 26.5]) rotate([0, 0, -45])
+      piston_valve(bore = 0.413, valve_gap_expansion = global_valve_gap_expansion,
+                   flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
+                   number = 1);
 }
 
 
