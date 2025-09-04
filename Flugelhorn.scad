@@ -78,9 +78,9 @@ use <list-comprehension-demos/skin.scad>
 // 9 == Valve caps.
 // 10 == Valve measurement casing (to aid in adjusting tolerances).
 // 11 == Emergency replacement top for fourth valve brace.
-// 12 == valves and valve block
+// 12 == valve and measurement casing for debugging.
 
-global_build_group = 12;
+global_build_group = 2;
 valves_horizontal = true;  // Smoothness experiment.  By making the lines go the opposite direction,
                            // it should reduce the need for smoothing.
 
@@ -286,7 +286,7 @@ module small_morse_receiver(lead_pipe_length_in_mm = 114, slide_gap_expansion = 
  * @param valve_gap_expansion The amount to shrink or expand the valve to compensate
  *                            for inaccuracy in the size of the model.
  */
-module piston_valve_raw(valve_gap_expansion = 0.01, flat_edge_extra_expansion = 0.00) {
+module piston_valve_unbored(valve_gap_expansion = 0.01, flat_edge_extra_expansion = 0.00) {
   difference() {
     cylinder(70, 11 - valve_gap_expansion, 11 - valve_gap_expansion, $fn=256);
 
@@ -311,8 +311,8 @@ module piston_valve(bore=0.413, valve_gap_expansion = 0.01,
   odd = ((number % 2) != 0);
   mmbore = inches_to_mm(bore) * 1.2;
   difference() {
-    piston_valve_raw(valve_gap_expansion = valve_gap_expansion,
-                     flat_edge_extra_expansion = flat_edge_extra_expansion);
+    piston_valve_unbored(valve_gap_expansion = valve_gap_expansion,
+                        flat_edge_extra_expansion = flat_edge_extra_expansion);
     translate([0, 0, 62.5]) cylinder(8, 1.65, 1.65, $fn = 256);  // 3.3mm bore hole to tap an m4 screw for the valve stem.
 
     // To/from valve slide - top (L-bores)
@@ -352,12 +352,12 @@ module piston_valve(bore=0.413, valve_gap_expansion = 0.01,
   intersection() {
   // even
     if (odd) {
-      translate([0, -15, 14]) rotate([28, -35, 45]) cube([30, 30, 2.5]);
+      translate([0, -15, 12.5]) rotate([28, -35, 45]) cube([32, 30, 2.5]);
     } else {
-      translate([0, -25, 28]) rotate([28, 35, 45]) cube([30, 30, 2.5]);
+      translate([0, -25, 27]) rotate([28, 35, 42]) cube([30, 30, 2.5]);
     }
-    piston_valve_raw(valve_gap_expansion = valve_gap_expansion,
-                     flat_edge_extra_expansion = flat_edge_extra_expansion);
+    piston_valve_unbored(valve_gap_expansion = valve_gap_expansion,
+                        flat_edge_extra_expansion = flat_edge_extra_expansion);
   }
 }
 
@@ -1158,7 +1158,7 @@ module curved_tube(bore=0.413, thickness = 2.0, radius_1 = 10,
                    radius_2 = 20, bend_radius = 40, thickness = 2,
                    slices = 100, enable_brace = false, start_degrees = 0,
                    end_degrees = 180, emit_from_slice = undef, emit_to_slice = undef,
-                   reversed = false) {
+                   reversed = false, hollow = true) {
     midwidth = radius_1 - (radius_1-radius_2)/2;
     difference()
     {
@@ -1180,18 +1180,20 @@ module curved_tube(bore=0.413, thickness = 2.0, radius_1 = 10,
 
         inner_radius_1 = radius_1 - thickness;
         inner_radius_2 = radius_2 - thickness;
-        skin([for(i=[0:slices], $fn = 256)
-            for (should_emit = ((emit_from_slice == undef) || (i >= emit_from_slice)) &&
-                            ((emit_to_slice == undef) || (i < emit_to_slice)))
-              transform(rotation([0, start_degrees + ((end_degrees - start_degrees) / slices * i), 0]) *
-                        translation([-bend_radius, 0, 0]),
-                        circle(inner_radius_1 - (inner_radius_1 - inner_radius_2) / slices * i), $fn = 256)]);
+        if (hollow) {
+          skin([for(i=[0:slices], $fn = 256)
+              for (should_emit = ((emit_from_slice == undef) || (i >= emit_from_slice)) &&
+                              ((emit_to_slice == undef) || (i < emit_to_slice)))
+                transform(rotation([0, start_degrees + ((end_degrees - start_degrees) / slices * i), 0]) *
+                          translation([-bend_radius, 0, 0]),
+                          circle(inner_radius_1 - (inner_radius_1 - inner_radius_2) / slices * i), $fn = 256)]);
 
-        /* Clean up the interior of the ends */
-        rotate([0, start_degrees, 0]) translate([-bend_radius, 0, -0.15])
-            cylinder(0.3, inner_radius_1, inner_radius_1);
-        rotate([0, end_degrees, 0]) translate([-bend_radius, 0, -0.15])
-            cylinder(0.3, inner_radius_2, inner_radius_2);
+          /* Clean up the interior of the ends */
+          rotate([0, start_degrees, 0]) translate([-bend_radius, 0, -0.15])
+              cylinder(0.3, inner_radius_1, inner_radius_1);
+          rotate([0, end_degrees, 0]) translate([-bend_radius, 0, -0.15])
+              cylinder(0.3, inner_radius_2, inner_radius_2);
+        }
 
         if (enable_brace) {
           translate([-10, 20, bend_radius - midwidth - 10]) {
@@ -1458,7 +1460,7 @@ if (global_build_group == 0) {
     translate([0, 0, down ? 11.5 : 26.5]) rotate([0, 0, -45])
       piston_valve(bore = 0.413, valve_gap_expansion = global_valve_gap_expansion,
                    flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
-                   number = 1);
+                   number = 2);
 }
 
 
