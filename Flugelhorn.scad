@@ -85,7 +85,7 @@ valves_horizontal = true;  // Smoothness experiment.  By making the lines go the
 
 high_quality = true;  // Makes the curved bell parts more accurate at the expense of rendering speed.
 
-enable_all_valves = true;  // Set to false if you're reprinting valves repeatedly to adjust size.
+enable_valves = 0;  // Valve nubmer w=hen reprinting valves to adjust size, or 0 for all.
 
 // Adjust for your printer so that acetone and light sanding results in valves that move.
 // Print the valve measurement casing first, then lap the valves as described above.  If you line up
@@ -93,13 +93,7 @@ enable_all_valves = true;  // Set to false if you're reprinting valves repeatedl
 // the hole with your finger and get no leakage.  If so, it's just right.  If it is too tight, make
 // this number bigger.  If it leaks, make this number smaller.
 
-// Old data not done with air check:
-// 0.02: Sticks in sizer.
-// 0.04: Sticks in sizer.
-// 0.06: Still just a hair too big.
-// 0.08: Still takes too much sanding, but can work.
-
-global_valve_gap_expansion = 0.09;
+global_valve_gap_expansion = 0.08;
 
 // If the valves don't move in the real casing, but move freely in the measurement casing,
 // increase this number.  If there's an obvious air gap, decrease it.
@@ -314,7 +308,7 @@ module piston_valve_raw(valve_gap_expansion = 0.01, flat_edge_extra_expansion = 
 module piston_valve(bore=0.413, valve_gap_expansion = 0.01,
                     flat_edge_extra_expansion = 0.00, number = 1) {
   odd = ((number % 2) != 0);
-  mmbore = inches_to_mm(bore);
+  mmbore = inches_to_mm(bore) * 1.2;
   difference() {
     piston_valve_raw(valve_gap_expansion = valve_gap_expansion,
                      flat_edge_extra_expansion = flat_edge_extra_expansion);
@@ -357,9 +351,9 @@ module piston_valve(bore=0.413, valve_gap_expansion = 0.01,
   intersection() {
   // even
     if (odd) {
-      translate([0, -15, 14]) rotate([20, -35, 45]) cube([30, 30, 2]);
+      translate([0, -15, 14]) rotate([28, -35, 45]) cube([30, 30, 2.5]);
     } else {
-      translate([0, -25, 28]) rotate([27, 35, 45]) cube([30, 30, 2]);
+      translate([0, -25, 28]) rotate([28, 35, 45]) cube([30, 30, 2.5]);
     }
     piston_valve_raw(valve_gap_expansion = valve_gap_expansion,
                      flat_edge_extra_expansion = flat_edge_extra_expansion);
@@ -920,28 +914,35 @@ module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
 
 module valve_cores(bore = 0.413) {
   // valves_horizontal
+  color([0.5, 0.5, 0.5])
   translate([0, 0, valves_horizontal ? 49 : 0]) {
-    rotate([valves_horizontal ? -90 : 0, 0, 0]) {
-      translate([0, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
-        piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
-                     flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
-                     number = 1);
-if (enable_all_valves) {
-      translate([40, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
-        piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
-                     flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
-                     number = 2);
-      translate([80, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
-        piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
-                     flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
-                     number = 3);
-      translate([120, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
-        piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
-                     flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
-                     number = 4);
-}
+      rotate([valves_horizontal ? -90 : 0, 0, 0]) {
+      if (enable_valves == 0 || enable_valves == 1) {
+        translate([0, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
+          piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                       flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
+                       number = 1);
+      }
+      if (enable_valves == 0 || enable_valves == 2) {
+        translate([40, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
+          piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                       flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
+                       number = 2);
+      }
+      if (enable_valves == 0 || enable_valves == 3) {
+        translate([80, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
+          piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                       flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
+                       number = 3);
+      }
+      if (enable_valves == 0 || enable_valves == 4) {
+        translate([120, 40, 0]) rotate([0, 0, valves_horizontal ? -45 : 0])
+          piston_valve(bore, valve_gap_expansion = global_valve_gap_expansion,
+                       flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
+                       number = 4);
+      }
     }
-  }
+  } 
 }
 
 module valve_caps() {
