@@ -81,12 +81,12 @@ use <list-comprehension-demos/skin.scad>
 // 12 == valve and measurement casing for debugging.
 
 global_build_group = 2;
-valves_horizontal = true;  // Smoothness experiment.  By making the lines go the opposite direction,
+valves_horizontal = false;  // Smoothness experiment.  By making the lines go the opposite direction,
                            // it should reduce the need for smoothing.
 
-high_quality = true;  // Makes the curved bell parts more accurate at the expense of rendering speed.
+global_high_quality = false;  // Makes some curved parts more accurate at the expense of rendering speed.
 
-enable_valves = 0;  // Valve nubmer w=hen reprinting valves to adjust size, or 0 for all.
+enable_valves = 0;  // Valve number when reprinting valves to adjust size, or 0 for all.
 
 // Adjust for your printer so that acetone and light sanding results in valves that move.
 // Print the valve measurement casing first, then lap the valves as described above.  If you line up
@@ -198,7 +198,6 @@ module receiver(outer_diameter_inches, taper_in_inches_per_inch, taper_length_in
             straight_tube(lead_pipe_length_in_mm - 10, 1.0,
                           mm_to_inches(outer_pipe_inner_diameter));
 
-
             translate([-3.5, outer_tube_radius - 3, 0]) cube([2, 11, 8]);
             translate([1.5, outer_tube_radius - 3, 0]) cube([2, 11, 8]);
 
@@ -296,6 +295,67 @@ module piston_valve_unbored(valve_gap_expansion = 0.01, flat_edge_extra_expansio
   }
 }
 
+module piston_valve_l_bore_1(mmbore, thickness) {
+  translate([-3, -15, 42])
+      rotate([-90, -35, -45])
+        curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
+                    radius_2 = mmbore / 2 + thickness, bend_radius = 12,
+                    thickness = thickness, start_degrees = 0,
+                    end_degrees = 180, reversed = false, hollow = false);
+}
+
+module piston_valve_l_bore_2(mmbore, thickness) {
+    translate([15, 3, 30])
+      rotate([-90, -35, 135])
+        curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
+                    radius_2 = mmbore / 2 + thickness, bend_radius = 12,
+                    thickness = thickness, start_degrees = 0,
+                    end_degrees = 180, reversed = false, hollow = false);
+}
+
+module piston_valve_curved_bore_wall(mmbore, thickness) {
+  // %render(){ piston_valve_l_bore_1(mmbore = mmbore, thickness = thickness); }
+  // %render(){ piston_valve_l_bore_2(mmbore = mmbore, thickness = thickness); }
+  //minkowski()
+
+
+    intersection() {
+      piston_valve_l_bore_1(mmbore = mmbore + .5, thickness = thickness);
+      piston_valve_l_bore_2(mmbore = mmbore + .5, thickness = thickness);
+    }
+}
+
+
+
+//from openscad import *
+//
+//obj = scad("""
+//   union()
+//   {
+//     cube([10,10,10]);
+//     cylinder(d=1,h=10);
+//   }
+//""")
+//obj.show()
+
+
+
+
+if (false) {
+  xbore = 0.413;
+  xinternal_bore = xbore;
+  xmmbore = inches_to_mm(xinternal_bore);
+//    hull() 
+    difference() {
+      translate([0, 0, 20])
+        piston_valve_unbored(valve_gap_expansion = global_valve_gap_expansion,
+                             flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion);
+      piston_valve_l_bore_1(mmbore = xmmbore, thickness = 0);
+      piston_valve_l_bore_2(mmbore = xmmbore, thickness = 0);
+      translate([-40, -40, 40]) cube([80, 80, 80]);
+    }
+}
+
 /**
  * @module valve               A trumpet/cornet/flugelhorn piston valve.
  * @param bore                 The diameter of the tubing in inches.
@@ -309,29 +369,24 @@ module piston_valve_unbored(valve_gap_expansion = 0.01, flat_edge_extra_expansio
 module piston_valve(bore=0.413, valve_gap_expansion = 0.01,
                     flat_edge_extra_expansion = 0.00, number = 1) {
   odd = ((number % 2) != 0);
-  mmbore = inches_to_mm(bore) * 1.2;
+  internal_bore = bore * 1.1;
+  mmbore = inches_to_mm(internal_bore);
+  thickness = 0.0;
+
   difference() {
     piston_valve_unbored(valve_gap_expansion = valve_gap_expansion,
                         flat_edge_extra_expansion = flat_edge_extra_expansion);
     translate([0, 0, 62.5]) cylinder(8, 1.65, 1.65, $fn = 256);  // 3.3mm bore hole to tap an m4 screw for the valve stem.
 
-    // To/from valve slide - top (L-bores)
-    translate([10, 0, odd ? 46 : 30]) rotate_extrude(angle=360, $fn=256)
-        translate([8, 0, 0]) circle(mmbore / 2, $fn=256);
-    translate([0, -11, odd ? 30 : 46]) rotate_extrude(angle=360, $fn=256)
-        translate([8, 0, 0]) circle(mmbore / 2, $fn=256);
+    // Straight bore for up valves.
+    translate([0, 0, 21.5]) rotate([0, 90, 45]) translate([0, 0, -20])
+      straight_tube(length = 80, thickness = thickness, bore = internal_bore, hollow = false);
 
-    // Slant bore (in to out)
-    rotate([0, 0, odd ? 0 : 180]) {
-        translate([0, 0, odd ? -16.5 : -28.5]) {
-            translate([-8, -8, odd ? 38 : 50]) rotate([-90, 35, 45])
-                rotate_extrude(angle=90, $fn=256) translate([8, 0, 0]) circle(mmbore / 2, $fn=256);
-            rotate([0, 0, 180]) translate([-8, -8, odd ? 38 : 50]) rotate([90, -35, 45])
-                rotate_extrude(angle=90, $fn=256) translate([8, 0, 0]) circle(mmbore / 2, $fn=256);
-            translate([-4, -4.5, odd ? 31.5 : 43.5]) rotate([-32, 32, -3])
-                cylinder(18, mmbore/2, mmbore/2, $fn = 256);
-        };
-    }
+    // To/from valve slide - top (L-bores)
+    // TO DO: Figure out a way to create a thinner wall between these.
+
+    piston_valve_l_bore_1(mmbore = mmbore, thickness = thickness);
+    piston_valve_l_bore_2(mmbore = mmbore, thickness = thickness);
 
     // Indent in bottom for valve oil
     translate([0, 0, -1]) cylinder(6, 9, 9, $fn = 256);
@@ -350,11 +405,15 @@ module piston_valve(bore=0.413, valve_gap_expansion = 0.01,
   }
   // Wall between slant bore and L-bore
   intersection() {
-  // even
-    if (odd) {
-      translate([0, -15, 12.5]) rotate([28, -35, 45]) cube([32, 30, 2.5]);
-    } else {
-      translate([0, -25, 27]) rotate([28, 35, 42]) cube([30, 30, 2.5]);
+    // even
+    union () {
+      // Wall 1
+      translate([-2, -5, 27.6]) rotate([30, 20, 15]) translate([0, -30, -1]) cube([40, 60, 2]);
+      difference() {
+        translate([-2, -5, 27.6]) rotate([30, 20, 15]) translate([-30, -30, -1]) cube([60, 60, 2]);
+        translate([-15, -15, 28.9]) cube([60, 60, 60]);
+      }
+      piston_valve_curved_bore_wall(mmbore = mmbore, thickness = thickness);
     }
     piston_valve_unbored(valve_gap_expansion = valve_gap_expansion,
                         flat_edge_extra_expansion = flat_edge_extra_expansion);
@@ -378,17 +437,10 @@ module piston_valve_casing(bore=0.413, number=1, valve_thread_pitch = 2, for_mea
                               // Bore holes for the valve tubing and tubes between the valves.
                               // Allow 10mm at the bottom for the compressed spring and plug; shift up the tubing holes
                               translate([0, 0, 10]) {
-                                  rotate([0, 90, 45]) translate([even ? -46 : -30, 0, -18])
+                                  rotate([0, 90, 45]) translate([-38, 0, -18])
                                       cylinder(18, mmbore/2, mmbore/2, $fn=256);
-                                  rotate([0, 90, 45]) translate([even ? -30 : -46, 0, 9])
+                                  rotate([0, 90, 45]) translate([-38, 0, 9])
                                       cylinder(10, mmbore/2, mmbore/2, $fn=256);
-                                  if (measurement) {
-                                    // Duplicate of the above, with opposite holes.
-                                    rotate([0, 90, 45]) translate([!even ? -46 : -30, 0, -18])
-                                        cylinder(18, mmbore/2, mmbore/2, $fn=256);
-                                    rotate([0, 90, 45]) translate([!even ? -30 : -46, 0, 9])
-                                        cylinder(10, mmbore/2, mmbore/2, $fn=256);
-                                  }
                                   rotate([0, 90, 135]) translate([-46, 0, -18])
                                       cylinder(10, mmbore/2, mmbore/2, $fn=256);
                                   rotate([0, 90, 315]) translate([-30, 0, 9])
@@ -441,16 +493,18 @@ module piston_valve_cap(valve_thread_pitch = 2, top_thickness = 2.0) {
     };
 }
 
-module straight_tube(length, thickness = 2.0, bore=0.413) {
-  sloped_tube(length, thickness, bore, bore);
+module straight_tube(length, thickness = 2.0, bore=0.413, hollow = true) {
+  sloped_tube(length, thickness, bore, bore, hollow = hollow);
 }
 
-module sloped_tube(length, thickness = 2.0, bore_1=0.413, bore_2=0.413) {
+module sloped_tube(length, thickness = 2.0, bore_1=0.413, bore_2=0.413, hollow = true) {
   mmbore_1 = inches_to_mm(bore_1);
   mmbore_2 = inches_to_mm(bore_2);
   difference() {
     cylinder(length, (mmbore_1 / 2) + thickness, (mmbore_2 / 2) + thickness, $fn=256);
-    translate([0, 0, -1]) cylinder(length + 2, mmbore_1 / 2, mmbore_2 / 2, $fn=256);
+    if (hollow) {
+      translate([0, 0, -1]) cylinder(length + 2, mmbore_1 / 2, mmbore_2 / 2, $fn=256);
+    }
   };
 }
 
@@ -881,18 +935,18 @@ module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
   difference() {
     union() {
       // Coupler for fastening receiver outer pipe.
-      translate([-30, 0, 40.4]) rotate([0, 90, 0]) small_morse_receiver_coupler(bore = bore);
+      translate([-30, 0, 48.4]) rotate([0, 90, 0]) small_morse_receiver_coupler(bore = bore);
 
-      translate([9, 0, 56]) rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
-      translate([9 + (spacing), 0, 40]) rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
-      translate([9 + (spacing * 2), 0, 56])
+      translate([9, 0, 48.4]) rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
+      translate([9 + (spacing), 0, 48.4]) rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
+      translate([9 + (spacing * 2), 0, 48.4])
           rotate([0, 90, 0]) straight_tube(spacing - 17, 3.0, bore);
 
       // Valve mount.
-      translate([17.5, -23, 71.2]) cube([40, 23.5, 5]);
+      translate([17.5, -23, 79.2]) cube([40, 23.5, 5]);
 
       // Coupler to bell short straight pipe.
-      translate([323.5, 28.05, -7.72]) rotate([0, -90, 0]) {
+      translate([323.5, 28.05, .28]) rotate([0, -90, 0]) {
         difference() {
           // length 115
           bell_short_straight_pipe(bore = bore, thickness = thickness, coupler_mode = true);
@@ -903,10 +957,10 @@ module valve_block(bore = 0.413, thickness = 2.0, fourth_valve = true) {
     }
 
     // Valve interior cutouts (approximate, not including flat edge).
-    translate([0, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
-    translate([spacing, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
-    translate([spacing * 2, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
-    translate([spacing * 3, 0, 6]) cylinder(casing_height - 16, 13, 13, $fn=256);
+    translate([0, 0, 6]) cylinder(casing_height - 6, 13, 13, $fn=256);
+    translate([spacing, 0, 6]) cylinder(casing_height - 6, 13, 13, $fn=256);
+    translate([spacing * 2, 0, 6]) cylinder(casing_height - 6, 13, 20, $fn=256);
+    translate([spacing * 3, 0, 6]) cylinder(casing_height - 6, 13, 13, $fn=256);
 
     // Valve mount hole
     translate([38.5, -19.275, 60]) rotate([0, 0, 90]) cylinder(30, 2, 2, $fn=256);
@@ -1085,7 +1139,7 @@ module bell_big_curve(bore=0.413, thickness = 2.0, coupler_mode = 0) {
 
     // At 337mm from end of bell, interior radius is 12.29mm.  Add thickness.
     // At other end of curve, 19mm diameter, 9.5mm radius.
-    number_of_slices = (high_quality ? 600 : 100);
+    number_of_slices = (global_high_quality ? 600 : 100);
     curved_tube(slices = number_of_slices,
                 radius_1 = 12.29 + thickness + ((coupler_mode > 0) ? thickness + 0.1 : 0),
                 radius_2 = 9.5 + thickness + ((coupler_mode > 0) ? thickness + 0.1 : 0),
@@ -1125,7 +1179,7 @@ module bell_small_curve(bore=0.413, thickness = 2.0, coupler_mode = 0) {
     // bell end, so the diameter of the bend is halfway between, or 116mm.
     // The radius is therefore about 58mm.
 
-    number_of_slices = (high_quality ? 600 : 100);
+    number_of_slices = (global_high_quality ? 600 : 100);
 
     difference() {
       union() {
@@ -1163,7 +1217,7 @@ module curved_tube(bore=0.413, thickness = 2.0, radius_1 = 10,
     difference()
     {
         union() {
-            skin([for(i=[0:slices], $fn = 256)
+            skin([for(i=[0:slices], $fn = global_high_quality ? 256 : 50)
                 for (should_emit = ((emit_from_slice == undef) || (i >= emit_from_slice)) &&
                               ((emit_to_slice == undef) || (i <= emit_to_slice)))
                   transform(rotation([0, start_degrees + ((end_degrees - start_degrees) / slices * i), 0]) *
