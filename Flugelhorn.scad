@@ -81,7 +81,7 @@ use <list-comprehension-demos/skin.scad>
 // 12 == valve and measurement casing for debugging.
 
 global_build_group = 2;
-valves_horizontal = false;  // Smoothness experiment.  By making the lines go the opposite direction,
+valves_horizontal = true;  // Smoothness experiment.  By making the lines go the opposite direction,
                            // it should reduce the need for smoothing.
 
 global_high_quality = false;  // Makes some curved parts more accurate at the expense of rendering speed.
@@ -296,8 +296,8 @@ module piston_valve_unbored(valve_gap_expansion = 0.01, flat_edge_extra_expansio
 }
 
 module piston_valve_l_bore_1(mmbore, thickness) {
-  translate([-3, -15, 42])
-      rotate([-90, -35, -45])
+  translate([-3, -15, 30])
+      rotate([-90, 35, -45])
         curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
                     radius_2 = mmbore / 2 + thickness, bend_radius = 12,
                     thickness = thickness, start_degrees = 0,
@@ -305,8 +305,8 @@ module piston_valve_l_bore_1(mmbore, thickness) {
 }
 
 module piston_valve_l_bore_2(mmbore, thickness) {
-    translate([15, 3, 30])
-      rotate([-90, -35, 135])
+    translate([15, 3, 43])
+      rotate([-90, 35, 135])
         curved_tube(slices = 50, radius_1 = mmbore / 2 + thickness,
                     radius_2 = mmbore / 2 + thickness, bend_radius = 12,
                     thickness = thickness, start_degrees = 0,
@@ -374,8 +374,11 @@ module piston_valve(bore=0.413, valve_gap_expansion = 0.01,
   thickness = 0.0;
 
   difference() {
+//union() {
     piston_valve_unbored(valve_gap_expansion = valve_gap_expansion,
                         flat_edge_extra_expansion = flat_edge_extra_expansion);
+//piston_valve_l_bore_2(mmbore = mmbore, thickness = thickness);
+//}
     translate([0, 0, 62.5]) cylinder(8, 1.65, 1.65, $fn = 256);  // 3.3mm bore hole to tap an m4 screw for the valve stem.
 
     // Straight bore for up valves.
@@ -405,16 +408,7 @@ module piston_valve(bore=0.413, valve_gap_expansion = 0.01,
   }
   // Wall between slant bore and L-bore
   intersection() {
-    // even
-    union () {
-      // Wall 1
-      translate([-2, -5, 27.6]) rotate([30, 20, 15]) translate([0, -30, -1]) cube([40, 60, 2]);
-      difference() {
-        translate([-2, -5, 27.6]) rotate([30, 20, 15]) translate([-30, -30, -1]) cube([60, 60, 2]);
-        translate([-15, -15, 28.9]) cube([60, 60, 60]);
-      }
-      piston_valve_curved_bore_wall(mmbore = mmbore, thickness = thickness);
-    }
+    piston_valve_curved_bore_wall(mmbore = mmbore, thickness = thickness);
     piston_valve_unbored(valve_gap_expansion = valve_gap_expansion,
                         flat_edge_extra_expansion = flat_edge_extra_expansion);
   }
@@ -1515,31 +1509,4 @@ if (global_build_group == 0) {
       piston_valve(bore = 0.413, valve_gap_expansion = global_valve_gap_expansion,
                    flat_edge_extra_expansion = global_valve_gap_flat_edge_extra_expansion,
                    number = 2);
-}
-
-
-// Coupler size testing.
-if (false) {
-  difference() {
-    bell(testing = true);
-    translate([-150, -150, -400]) cube([300, 300, 400]);
-  }
-
-  translate([60, 40, -225]) {
-    difference() {
-      // length 115
-      bell_short_straight_pipe(bore = 0.413, thickness = 2.0, coupler_mode = true);
-      translate([0, -50, 110]) cube([100, 100, 115]);
-    }
-  }
-}
-
-if (false) {
-  intersection() {
-    difference() {
-      translate([100, 0, 45]) rotate([0, 180, 0]) valve_block();
-      translate([-300, -300, -600]) cube([600, 600, 600]);
-    }
-    translate([-250, -313, 0]) cube([300, 300, 300]);
-  }
 }
